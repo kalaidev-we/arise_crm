@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../utils/db';
 import { Company, User, SubscriptionRequest } from '../utils/mockDb';
+import { useAuth } from '../context/AuthContext';
 import { 
   Building, 
   Shield, 
@@ -16,12 +17,28 @@ import {
 } from 'lucide-react';
 
 export const MasterAdmin: React.FC = () => {
+  const { user: currentUser } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [admins, setAdmins] = useState<User[]>([]);
   const [requests, setRequests] = useState<SubscriptionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'tenants' | 'admins' | 'requests'>('tenants');
   const [dragActiveAdmin, setDragActiveAdmin] = useState(false);
+  const [grants, setGrants] = useState<any[]>([]);
+
+  const fetchGrants = async () => {
+    try {
+      const grantsData = await db.supportAccess.listGrants();
+      setGrants(grantsData);
+    } catch (err) {
+      console.error('Failed to load support access grants:', err);
+    }
+  };
+
+  const handleEnterSupport = (companyId: string) => {
+    localStorage.setItem('crm_impersonated_company_id', companyId);
+    window.location.href = '/';
+  };
 
   const compressAndSetLogoAdmin = (file: File, callback: (base64: string) => void) => {
     if (!file.type.startsWith('image/')) {
@@ -116,7 +133,8 @@ export const MasterAdmin: React.FC = () => {
       const [companiesData, adminsData, requestsData] = await Promise.all([
         db.superadmin.getCompanies(),
         db.superadmin.getTenantAdmins(),
-        db.subscriptionRequests.list()
+        db.subscriptionRequests.list(),
+        fetchGrants()
       ]);
       setCompanies(companiesData);
       setAdmins(adminsData);
@@ -469,45 +487,72 @@ export const MasterAdmin: React.FC = () => {
                       <td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No tenant companies registered</td>
                     </tr>
                   ) : (
-                    companies.map(c => (
-                      <tr key={c.id}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ width: '28px', height: '28px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                              {c.logo_url ? (
-                                <img 
-                                  src={c.logo_url} 
-                                  alt="Tenant Logo" 
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                  onError={(e) => {
-                                    (e.target as HTMLElement).style.display = 'none';
-                                  }}
-                                />
-                              ) : null}
-                              <Building size={14} style={{ color: 'var(--text-muted)' }} />
+                    companies.map(c => {
+                      const activeGrant = grants.find(g => g.company_id === c.id && g.superadmin_id === currentUser?.id && new Date(g.expires_at) > new Date());
+                      return (
+                        <tr key={c.id}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <div style={{ width: '28px', height: '28px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                                {c.logo_url ? (
+                                  <img 
+                                    src={c.logo_url} 
+                                    alt="Tenant Logo" 
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                    onError={(e) => {
+                                      (e.target as HTMLElement).style.display = 'none';
+                                    }}
+                                  />
+                                ) : null}
+                                <Building size={14} style={{ color: 'var(--text-muted)' }} />
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 600 }}>{c.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>UUID: {c.id}</div>
+                              </div>
                             </div>
-                            <div>
-                              <div style={{ fontWeight: 600 }}>{c.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>UUID: {c.id}</div>
+                          </td>
+                          <td style={{ color: 'var(--text-secondary)' }}>
+                            {new Date(c.created_at).toLocaleDateString()}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+                              {activeGrant ? (
+                                <button
+                                  type="button"
+                                  className="btn btn-primary"
+                                  style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', background: 'linear-gradient(95deg, #7c3aed, #4f46e5)', border: 'none' }}
+                                  onClick={() => handleEnterSupport(c.id)}
+                                >
+                                  Enter Workspace
+                                </button>
+                              ) : (
+                                <span style={{ 
+                                  fontSize: '0.7rem', 
+                                  color: 'var(--text-muted)', 
+                                  border: '1px solid var(--border-color)', 
+                                  padding: '0.2rem 0.5rem', 
+                                  borderRadius: '4px', 
+                                  background: 'rgba(255,255,255,0.02)',
+                                  fontWeight: 500
+                                }}>
+                                  Access Grant Required
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                className="btn btn-ghost"
+                                style={{ padding: '0.3rem', color: '#f87171' }}
+                                onClick={() => handleDeleteCompany(c.id, c.name)}
+                                title="Delete Company and Cascade data"
+                              >
+                                <Trash2 size={15} />
+                              </button>
                             </div>
-                          </div>
-                        </td>
-                        <td style={{ color: 'var(--text-secondary)' }}>
-                          {new Date(c.created_at).toLocaleDateString()}
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            className="btn btn-ghost"
-                            style={{ padding: '0.3rem', color: '#f87171' }}
-                            onClick={() => handleDeleteCompany(c.id, c.name)}
-                            title="Delete Company and Cascade data"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

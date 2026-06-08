@@ -291,6 +291,23 @@ export class MockDatabase {
   private static getMyCompanyId(): string {
     const user = this.getCurrentUser();
     if (!user) throw new Error('Unauthenticated');
+    if (user.role === 'superadmin') {
+      const impersonatedId = localStorage.getItem('crm_impersonated_company_id');
+      if (impersonatedId) {
+        // Enforce active support grant check
+        const grants = JSON.parse(localStorage.getItem('crm_support_grants') || '[]');
+        const activeGrant = grants.find((g: any) => 
+          g.company_id === impersonatedId && 
+          g.superadmin_id === user.id && 
+          new Date(g.expires_at) > new Date()
+        );
+        if (!activeGrant) {
+          localStorage.removeItem('crm_impersonated_company_id');
+          throw new Error('Unauthorized: Support access grant has expired or is invalid.');
+        }
+        return impersonatedId;
+      }
+    }
     return user.company_id;
   }
 
@@ -311,10 +328,15 @@ export class MockDatabase {
   // 1. Users CRUD
   static getUsers(): User[] {
     const myCompanyId = this.getMyCompanyId();
+    const myRole = this.getMyRole();
     const users = getStored<User[]>(STORAGE_KEYS.USERS, []);
 
     // Filter by company_id (Tenant Isolation)
-    const companyUsers = users.filter(u => u.company_id === myCompanyId);
+    let companyUsers = users.filter(u => u.company_id === myCompanyId);
+    if (myRole === 'admin') {
+      const superadmins = users.filter(u => u.role === 'superadmin');
+      companyUsers = [...companyUsers, ...superadmins.filter(su => !companyUsers.some(cu => cu.id === su.id))];
+    }
 
     // Apply password visibility rules:
     // Mask all passwords in directory lists to remove password visibility
@@ -399,6 +421,11 @@ export class MockDatabase {
     }
 
     const users = getStored<User[]>(STORAGE_KEYS.USERS, []);
+    const userToDelete = users.find(u => u.id === userId);
+    if (userToDelete && userToDelete.role === 'superadmin') {
+      throw new Error('Unauthorized: Admins cannot delete superadmins');
+    }
+
     const index = users.findIndex(u => u.id === userId && u.company_id === myCompanyId);
     if (index === -1) throw new Error('User not found');
 

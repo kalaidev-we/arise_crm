@@ -10,6 +10,11 @@ export const CompanyAdmin: React.FC = () => {
   const [usersList, setUsersList] = useState<User[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Tabbed layout state
+  const [activeTab, setActiveTab] = useState<'users' | 'support'>('users');
+  const [grants, setGrants] = useState<any[]>([]);
+  const [grantDurations, setGrantDurations] = useState<Record<string, number>>({});
 
   // User Creation Form
   const [newUserForm, setNewUserForm] = useState({
@@ -61,12 +66,53 @@ export const CompanyAdmin: React.FC = () => {
     }
   };
 
+  const fetchGrants = async () => {
+    try {
+      const grantsData = await db.supportAccess.listGrants(user?.company_id);
+      setGrants(grantsData);
+    } catch (err) {
+      console.error('Failed to load support access grants:', err);
+    }
+  };
+
+  const handleGrantAccess = async (superadminId: string) => {
+    const hours = grantDurations[superadminId] || 4;
+    setSaving(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      await db.supportAccess.grant(superadminId, hours);
+      setSuccessMsg('Temporary support access granted successfully.');
+      await fetchGrants();
+    } catch (err: any) {
+      setError(err.message || 'Failed to grant support access.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRevokeAccess = async (grantId: string) => {
+    setSaving(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      await db.supportAccess.revoke(grantId);
+      setSuccessMsg('Support access revoked successfully.');
+      await fetchGrants();
+    } catch (err: any) {
+      setError(err.message || 'Failed to revoke support access.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const fetchAdminData = async () => {
     setLoading(true);
     try {
       const [usersData, departmentsData] = await Promise.all([
         db.users.list(),
-        db.departments.list()
+        db.departments.list(),
+        fetchGrants()
       ]);
       setUsersList(usersData);
       setDepartments(departmentsData);
@@ -150,9 +196,38 @@ export const CompanyAdmin: React.FC = () => {
   const managersList = usersList.filter(u => u.role === 'manager' || u.role === 'admin');
 
   return (
-    <div className="anim-fade" style={containerStyle}>
-      
-      {/* LEFT COLUMN: SIGN UP & DEPARTMENTS */}
+    <div className="anim-fade" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
+      {/* Tabs list bar */}
+      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+        <button
+          onClick={() => { setActiveTab('users'); setError(null); setSuccessMsg(null); }}
+          className="btn"
+          style={{
+            background: activeTab === 'users' ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+            borderColor: activeTab === 'users' ? 'var(--primary)' : 'transparent',
+            color: activeTab === 'users' ? 'var(--text-primary)' : 'var(--text-secondary)',
+            padding: '0.5rem 1rem'
+          }}
+        >
+          Users & Departments
+        </button>
+        <button
+          onClick={() => { setActiveTab('support'); setError(null); setSuccessMsg(null); }}
+          className="btn"
+          style={{
+            background: activeTab === 'support' ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+            borderColor: activeTab === 'support' ? 'var(--primary)' : 'transparent',
+            color: activeTab === 'support' ? 'var(--text-primary)' : 'var(--text-secondary)',
+            padding: '0.5rem 1rem'
+          }}
+        >
+          System Support Access
+        </button>
+      </div>
+
+      {activeTab === 'users' ? (
+        <div style={containerStyle}>
+          {/* LEFT COLUMN: SIGN UP & DEPARTMENTS */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: '0 0 380px', minWidth: '320px' }}>
         {/* 1. CREATE USER / SIGN UP SECTION */}
         <div className="glass-panel" style={{ width: '100%', height: 'fit-content' }}>
@@ -419,24 +494,28 @@ export const CompanyAdmin: React.FC = () => {
                         )}
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
-                          <button
-                            className="btn btn-ghost"
-                            style={{ fontSize: '0.75rem' }}
-                            onClick={() => handleEditPassword(u)}
-                          >
-                            Change Password
-                          </button>
-                          {!isMe && (
+                        {u.role !== 'superadmin' ? (
+                          <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
                             <button
                               className="btn btn-ghost"
-                              style={{ fontSize: '0.75rem', color: '#f87171' }}
-                              onClick={() => handleDeleteUser(u.id)}
+                              style={{ fontSize: '0.75rem' }}
+                              onClick={() => handleEditPassword(u)}
                             >
-                              Delete
+                              Change Password
                             </button>
-                          )}
-                        </div>
+                            {!isMe && (
+                              <button
+                                className="btn btn-ghost"
+                                style={{ fontSize: '0.75rem', color: '#f87171' }}
+                                onClick={() => handleDeleteUser(u.id)}
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>System Managed</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -446,7 +525,124 @@ export const CompanyAdmin: React.FC = () => {
           </div>
         )}
       </div>
+      ) : (
+        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={sectionHeaderStyle}>
+            <Shield size={18} style={{ color: 'var(--primary)' }} />
+            <h3 style={{ fontSize: '1.1rem' }}>Grant Temporary Support Access</h3>
+          </div>
+          
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+            System superadministrators have zero access to your company's data (leads, deals, projects, financials) by default. 
+            If you need technical assistance, you can grant temporary support access to specific superadministrators below. 
+            Access will automatically expire after the selected duration, or you can revoke it manually at any time.
+          </p>
 
+          {error && <div style={errorBanner}>{error}</div>}
+          {successMsg && <div style={successBanner}>{successMsg}</div>}
+
+          <div className="table-container" style={{ marginTop: '0.5rem' }}>
+            <table className="custom-table" style={{ fontSize: '0.85rem' }}>
+              <thead>
+                <tr>
+                  <th>Superadmin Details</th>
+                  <th>Status</th>
+                  <th>Duration Selection</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usersList.filter(u => u.role === 'superadmin').map(u => {
+                  const activeGrant = grants.find(g => g.superadmin_id === u.id && new Date(g.expires_at) > new Date());
+                  const selectedDuration = grantDurations[u.id] || 4;
+
+                  return (
+                    <tr key={u.id}>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{u.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.email}</div>
+                      </td>
+                      <td>
+                        {activeGrant ? (
+                          <span style={{ 
+                            fontSize: '0.75rem', 
+                            fontWeight: 600, 
+                            background: 'rgba(16, 185, 129, 0.12)', 
+                            color: '#34d399', 
+                            padding: '0.2rem 0.5rem', 
+                            borderRadius: '4px' 
+                          }}>
+                            Access Active (Expires: {new Date(activeGrant.expires_at).toLocaleString()})
+                          </span>
+                        ) : (
+                          <span style={{ 
+                            fontSize: '0.75rem', 
+                            fontWeight: 600, 
+                            background: 'rgba(255,255,255,0.05)', 
+                            color: 'var(--text-muted)', 
+                            padding: '0.2rem 0.5rem', 
+                            borderRadius: '4px' 
+                          }}>
+                            No Active Access
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {!activeGrant ? (
+                          <select
+                            className="form-select"
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', width: 'fit-content' }}
+                            value={selectedDuration}
+                            onChange={(e) => setGrantDurations(prev => ({ ...prev, [u.id]: parseInt(e.target.value) }))}
+                          >
+                            <option value={1}>1 Hour</option>
+                            <option value={4}>4 Hours</option>
+                            <option value={12}>12 Hours</option>
+                            <option value={24}>24 Hours</option>
+                            <option value={168}>7 Days</option>
+                          </select>
+                        ) : (
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>N/A</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        {activeGrant ? (
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.75rem', padding: '0.3rem 0.75rem', color: '#f87171', borderColor: 'rgba(239,68,68,0.2)' }}
+                            onClick={() => handleRevokeAccess(activeGrant.id)}
+                            disabled={saving}
+                          >
+                            Revoke Access
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            style={{ fontSize: '0.75rem', padding: '0.3rem 0.75rem' }}
+                            onClick={() => handleGrantAccess(u.id)}
+                            disabled={saving}
+                          >
+                            Grant Access
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {usersList.filter(u => u.role === 'superadmin').length === 0 && (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '1rem' }}>
+                      No system superadministrators available.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

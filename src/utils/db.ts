@@ -25,6 +25,16 @@ export const supabase = !isMock
 // Simulated loading delay helper
 const delay = (ms = 400) => new Promise(res => setTimeout(res, ms));
 
+// Helper for superadmin impersonation scoping
+function getScopedQuery(table: string) {
+  let query = supabase!.from(table).select('*');
+  const impersonatedId = localStorage.getItem('crm_impersonated_company_id');
+  if (impersonatedId) {
+    query = query.eq('company_id', impersonatedId);
+  }
+  return query;
+}
+
 export const db = {
   companies: {
     async get(id: string): Promise<Company | null> {
@@ -120,7 +130,12 @@ export const db = {
       if (isMock) return MockDatabase.getUsers();
 
       // Real Supabase: query the dynamic view "profiles" (which masks passwords on database side)
-      const { data, error } = await supabase!.from('profiles').select('*');
+      let query = supabase!.from('profiles').select('*');
+      const impersonatedId = localStorage.getItem('crm_impersonated_company_id');
+      if (impersonatedId) {
+        query = query.eq('company_id', impersonatedId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },
@@ -200,7 +215,7 @@ export const db = {
       await delay(300);
       if (isMock) return MockDatabase.getLeads();
 
-      const { data, error } = await supabase!.from('leads').select('*');
+      const { data, error } = await getScopedQuery('leads');
       if (error) throw error;
       return data || [];
     },
@@ -324,7 +339,7 @@ export const db = {
       await delay(300);
       if (isMock) return MockDatabase.getDeals();
 
-      const { data, error } = await supabase!.from('deals').select('*');
+      const { data, error } = await getScopedQuery('deals');
       if (error) throw error;
       return data || [];
     },
@@ -390,7 +405,7 @@ export const db = {
       await delay(300);
       if (isMock) return MockDatabase.getClients();
 
-      const { data, error } = await supabase!.from('clients').select('*');
+      const { data, error } = await getScopedQuery('clients');
       if (error) throw error;
       return data || [];
     }
@@ -401,7 +416,7 @@ export const db = {
       await delay(300);
       if (isMock) return MockDatabase.getProjects();
 
-      const { data, error } = await supabase!.from('projects').select('*');
+      const { data, error } = await getScopedQuery('projects');
       if (error) throw error;
       return data || [];
     },
@@ -449,11 +464,11 @@ export const db = {
       await delay(200);
       if (isMock) return MockDatabase.getMilestones(projectId);
 
-      let query = supabase!.from('milestones').select('*').order('sort_order', { ascending: true });
+      let query = getScopedQuery('milestones');
       if (projectId) {
         query = query.eq('project_id', projectId);
       }
-      const { data, error } = await query;
+      const { data, error } = await query.order('sort_order', { ascending: true });
       if (error) throw error;
       return data || [];
     },
@@ -477,11 +492,10 @@ export const db = {
       await delay(300);
       if (isMock) return MockDatabase.getTasks(projectId);
 
-      let query = supabase!.from('tasks').select('*');
+      let query = getScopedQuery('tasks');
       if (projectId) {
         // Fetch tasks for the project by checking sub-milestones
-        const { data: milestones } = await supabase!
-          .from('milestones')
+        const { data: milestones } = await getScopedQuery('milestones')
           .select('id')
           .eq('project_id', projectId);
         
@@ -541,7 +555,7 @@ export const db = {
       await delay(300);
       if (isMock) return MockDatabase.getInvoices();
 
-      const { data, error } = await supabase!.from('invoices').select('*');
+      const { data, error } = await getScopedQuery('invoices');
       if (error) throw error;
       return data || [];
     },
@@ -575,7 +589,7 @@ export const db = {
       await delay(300);
       if (isMock) return MockDatabase.getExpenses();
 
-      const { data, error } = await supabase!.from('expenses').select('*');
+      const { data, error } = await getScopedQuery('expenses');
       if (error) throw error;
       return data || [];
     },
@@ -694,7 +708,7 @@ export const db = {
       await delay(100);
       if (isMock) return MockDatabase.getDepartments();
 
-      const { data, error } = await supabase!.from('departments').select('*');
+      const { data, error } = await getScopedQuery('departments');
       if (error) throw error;
       return data || [];
     },
@@ -758,6 +772,86 @@ export const db = {
         .single();
       if (error) throw error;
       return data;
+    }
+  },
+
+  supportAccess: {
+    async listGrants(companyId?: string): Promise<any[]> {
+      if (isMock) {
+        const grants = JSON.parse(localStorage.getItem('crm_support_grants') || '[]');
+        if (companyId) return grants.filter((g: any) => g.company_id === companyId);
+        return grants;
+      }
+      let query = supabase!.from('superadmin_access_grants').select('*');
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+
+    async grant(superadminId: string, durationHours: number): Promise<any> {
+      if (isMock) {
+        const currentUser = MockDatabase.getCurrentUser();
+        if (!currentUser) throw new Error('Unauthenticated');
+        const grants = JSON.parse(localStorage.getItem('crm_support_grants') || '[]');
+        const newGrant = {
+          id: crypto.randomUUID(),
+          company_id: currentUser.company_id,
+          superadmin_id: superadminId,
+          granted_by: currentUser.id,
+          duration_hours: durationHours,
+          expires_at: new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString(),
+          created_at: new Date().toISOString()
+        };
+        grants.push(newGrant);
+        localStorage.setItem('crm_support_grants', JSON.stringify(grants));
+        return newGrant;
+      }
+
+      const { data: { user } } = await supabase!.auth.getUser();
+      if (!user) throw new Error('Unauthenticated');
+      
+      const { data: profile } = await supabase!
+        .from('users')
+        .select('company_id')
+        .eq('id', user.id)
+        .single();
+      
+      if (!profile) throw new Error('Profile not found');
+
+      const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+
+      const { data, error } = await supabase!
+        .from('superadmin_access_grants')
+        .insert([{
+          company_id: profile.company_id,
+          superadmin_id: superadminId,
+          granted_by: user.id,
+          duration_hours: durationHours,
+          expires_at: expiresAt
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async revoke(grantId: string): Promise<void> {
+      if (isMock) {
+        const grants = JSON.parse(localStorage.getItem('crm_support_grants') || '[]');
+        const filtered = grants.filter((g: any) => g.id !== grantId);
+        localStorage.setItem('crm_support_grants', JSON.stringify(filtered));
+        return;
+      }
+      const { error } = await supabase!
+        .from('superadmin_access_grants')
+        .delete()
+        .eq('id', grantId);
+      
+      if (error) throw error;
     }
   }
 };

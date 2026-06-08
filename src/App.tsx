@@ -79,9 +79,16 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 const App: React.FC = () => {
-  const { user, loading, setChangePasswordModalOpen } = useAuth();
+  const { user, loading, setChangePasswordModalOpen, companyName } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const isSuperAdminImpersonating = user?.role === 'superadmin' && !!localStorage.getItem('crm_impersonated_company_id');
+
+  const handleExitSupport = () => {
+    localStorage.removeItem('crm_impersonated_company_id');
+    window.location.href = '/master-admin';
+  };
 
   if (loading) {
     return (
@@ -112,13 +119,24 @@ const App: React.FC = () => {
       {user && <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />}
       
       <main className="main-content" style={user ? {} : { marginLeft: 0, padding: 0 }}>
-        {user && (
-          <div className="mobile-header-toggle">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="btn btn-ghost" style={{ padding: '0.5rem 0' }}>
-              <Menu size={24} />
+        {user && isSuperAdminImpersonating && (
+          <div style={supportBannerStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <ShieldAlert size={16} style={{ color: '#c084fc', flexShrink: 0 }} />
+              <span>
+                <strong>System Support Active:</strong> Impersonating tenant workspace <strong style={{ color: '#e9d5ff' }}>{companyName}</strong>.
+              </span>
+            </div>
+            <button 
+              onClick={handleExitSupport} 
+              className="btn"
+              style={supportExitBtnStyle}
+            >
+              Exit Support Mode
             </button>
           </div>
         )}
+
         {user && <Header title={getHeaderTitle()} />}
         
         {user?.is_default_password && (
@@ -157,7 +175,9 @@ const App: React.FC = () => {
             path="/" 
             element={
               <ProtectedRoute>
-                {user?.role === 'superadmin' ? <Navigate to="/master-admin" replace /> : <Dashboard />}
+                {user?.role === 'superadmin' && !localStorage.getItem('crm_impersonated_company_id')
+                  ? <Navigate to="/master-admin" replace /> 
+                  : <Dashboard />}
               </ProtectedRoute>
             } 
           />
@@ -250,6 +270,34 @@ const bannerBtnStyle: React.CSSProperties = {
   borderColor: 'rgba(239, 68, 68, 0.3)',
   color: '#f87171',
   cursor: 'pointer',
+};
+
+const supportBannerStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  background: 'linear-gradient(95deg, #7c3aed, #4f46e5)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
+  padding: '0.75rem 1.25rem',
+  color: '#ffffff',
+  fontSize: '0.825rem',
+  fontWeight: 500,
+  borderRadius: 'var(--radius-sm)',
+  marginBottom: '1.5rem',
+  boxShadow: '0 4px 12px rgba(124, 58, 237, 0.15)',
+  gap: '1rem',
+  flexWrap: 'wrap',
+};
+
+const supportExitBtnStyle: React.CSSProperties = {
+  padding: '0.35rem 0.75rem',
+  fontSize: '0.75rem',
+  background: 'rgba(255, 255, 255, 0.12)',
+  borderColor: 'rgba(255, 255, 255, 0.25)',
+  color: '#ffffff',
+  cursor: 'pointer',
+  fontWeight: 600,
+  borderRadius: '4px',
 };
 
 export default App;

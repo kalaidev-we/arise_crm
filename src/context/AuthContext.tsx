@@ -35,7 +35,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const currentUser = await db.auth.getCurrentUser();
         setUser(currentUser);
         if (currentUser) {
-          await fetchCompanyName(currentUser.company_id);
+          let companyId = currentUser.company_id;
+          if (currentUser.role === 'superadmin') {
+            const impersonatedId = localStorage.getItem('crm_impersonated_company_id');
+            if (impersonatedId) {
+              companyId = impersonatedId;
+            }
+          }
+          await fetchCompanyName(companyId);
         }
       } catch (err) {
         console.error('Auth check error:', err);
@@ -98,8 +105,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isAdmin = user?.role === 'admin';
-  const isManager = user?.role === 'manager' || user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const isManager = user?.role === 'manager' || user?.role === 'admin' || user?.role === 'superadmin';
   const isStaff = user?.role === 'staff';
   const isSuperAdmin = user?.role === 'superadmin';
 

@@ -47,7 +47,7 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ 
       </div>
 
       <nav style={navStyle}>
-        {isSuperAdmin ? (
+        {isSuperAdmin && (
           <NavLink 
             to="/master-admin" 
             style={({ isActive }) => navItemStyle(isActive)}
@@ -55,8 +55,15 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ 
             <Shield size={18} />
             <span>Master Admin</span>
           </NavLink>
-        ) : (
+        )}
+
+        {(!isSuperAdmin || localStorage.getItem('crm_impersonated_company_id')) && (
           <>
+            {isSuperAdmin && (
+              <div style={sidebarDividerStyle}>
+                Workspace Support
+              </div>
+            )}
             <NavLink 
               to="/" 
               end
@@ -332,4 +339,17 @@ const keyButtonStyle: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   transition: 'all var(--transition-fast)',
+};
+
+const sidebarDividerStyle: React.CSSProperties = {
+  fontSize: '0.65rem',
+  color: 'var(--text-muted)',
+  textTransform: 'uppercase',
+  fontWeight: 700,
+  letterSpacing: '0.05em',
+  marginTop: '1.25rem',
+  marginBottom: '0.5rem',
+  paddingLeft: '0.5rem',
+  borderTop: '1px solid var(--border-color)',
+  paddingTop: '1rem',
 };
