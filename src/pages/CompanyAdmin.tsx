@@ -525,6 +525,7 @@ export const CompanyAdmin: React.FC = () => {
           </div>
         )}
       </div>
+    </div>
       ) : (
         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div style={sectionHeaderStyle}>
