@@ -1010,6 +1010,50 @@ export class MockDatabase {
     return depts.filter(d => d.company_id === myCompanyId);
   }
 
+  static insertDepartment(name: string, companyId: string): Department {
+    const myRole = this.getMyRole();
+    if (myRole !== 'admin' && myRole !== 'superadmin') {
+      throw new Error('Unauthorized: Only Admin can create departments');
+    }
+    const depts = getStored<Department[]>(STORAGE_KEYS.DEPARTMENTS, []);
+    const created: Department = {
+      id: crypto.randomUUID(),
+      company_id: companyId,
+      name,
+      created_at: new Date().toISOString()
+    };
+    depts.push(created);
+    setStored(STORAGE_KEYS.DEPARTMENTS, depts);
+    return created;
+  }
+
+  static deleteDepartment(id: string): void {
+    const myRole = this.getMyRole();
+    if (myRole !== 'admin' && myRole !== 'superadmin') {
+      throw new Error('Unauthorized: Only Admin can delete departments');
+    }
+    const depts = getStored<Department[]>(STORAGE_KEYS.DEPARTMENTS, []);
+    const index = depts.findIndex(d => d.id === id);
+    if (index === -1) throw new Error('Department not found');
+
+    const filtered = depts.filter(d => d.id !== id);
+    setStored(STORAGE_KEYS.DEPARTMENTS, filtered);
+
+    // Also null out department_id on users belonging to this department
+    const users = getStored<User[]>(STORAGE_KEYS.USERS, []);
+    let updated = false;
+    const updatedUsers = users.map(u => {
+      if (u.department_id === id) {
+        updated = true;
+        return { ...u, department_id: null };
+      }
+      return u;
+    });
+    if (updated) {
+      setStored(STORAGE_KEYS.USERS, updatedUsers);
+    }
+  }
+
   // 10. Superadmin API methods
   static superadminGetCompanies(): Company[] {
     const myRole = this.getMyRole();

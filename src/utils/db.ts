@@ -603,6 +603,29 @@ export const db = {
       const { data, error } = await supabase!.from('departments').select('*');
       if (error) throw error;
       return data || [];
+    },
+
+    async create(name: string, companyId: string): Promise<Department> {
+      await delay(200);
+      if (isMock) return MockDatabase.insertDepartment(name, companyId);
+
+      const { data, error } = await supabase!
+        .from('departments')
+        .insert([{ name, company_id: companyId }])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      await delay(200);
+      if (isMock) {
+        MockDatabase.deleteDepartment(id);
+        return;
+      }
+      const { error } = await supabase!.from('departments').delete().eq('id', id);
+      if (error) throw error;
     }
   }
 };

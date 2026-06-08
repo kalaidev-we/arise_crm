@@ -245,6 +245,20 @@ CREATE POLICY "departments_select" ON departments
     OR is_current_user_superadmin()
   );
 
+CREATE POLICY "departments_insert" ON departments
+  FOR INSERT
+  WITH CHECK (
+    company_id = get_current_user_company_id()
+    AND get_current_user_role() IN ('admin', 'superadmin')
+  );
+
+CREATE POLICY "departments_delete" ON departments
+  FOR DELETE
+  USING (
+    company_id = get_current_user_company_id()
+    AND get_current_user_role() IN ('admin', 'superadmin')
+  );
+
 -- COMPANY-SCOPED TABLE POLICIES
 CREATE POLICY "leads_all" ON leads
   FOR ALL

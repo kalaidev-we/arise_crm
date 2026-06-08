@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { db } from '../utils/db';
 import { User, Department } from '../utils/mockDb';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Users, Shield, KeyRound, Check, HelpCircle, Mail } from 'lucide-react';
+import { Plus, Users, Shield, KeyRound, Check, HelpCircle, Mail, Trash2, Building } from 'lucide-react';
 
 export const CompanyAdmin: React.FC = () => {
   const { user } = useAuth();
@@ -26,6 +26,40 @@ export const CompanyAdmin: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const [newDeptName, setNewDeptName] = useState('');
+  const [deptSaving, setDeptSaving] = useState(false);
+
+  const handleCreateDepartment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDeptName.trim()) return;
+    setDeptSaving(true);
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      await db.departments.create(newDeptName.trim(), user?.company_id || '');
+      setSuccessMsg(`Department "${newDeptName.trim()}" created successfully!`);
+      setNewDeptName('');
+      await fetchAdminData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to create department.');
+    } finally {
+      setDeptSaving(false);
+    }
+  };
+
+  const handleDeleteDepartment = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this department? Any users in this department will be moved to General Overhead.')) return;
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      await db.departments.delete(id);
+      setSuccessMsg('Department deleted successfully.');
+      await fetchAdminData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete department.');
+    }
+  };
 
   const fetchAdminData = async () => {
     setLoading(true);
@@ -118,109 +152,160 @@ export const CompanyAdmin: React.FC = () => {
   return (
     <div className="anim-fade" style={containerStyle}>
       
-      {/* 1. CREATE USER / SIGN UP SECTION */}
-      <div className="glass-panel" style={{ flex: '0 0 380px', minWidth: '320px', height: 'fit-content' }}>
-        <div style={sectionHeaderStyle}>
-          <Users size={18} style={{ color: 'var(--primary)' }} />
-          <h3 style={{ fontSize: '1.1rem' }}>Register User Account</h3>
-        </div>
-
-        {error && <div style={errorBanner}>{error}</div>}
-        {successMsg && <div style={successBanner}>{successMsg}</div>}
-
-        <form onSubmit={handleCreateUser} style={formLayout}>
-          <div className="form-group">
-            <label className="form-label">Name *</label>
-            <input
-              type="text"
-              className="form-input"
-              required
-              placeholder="e.g. Rachel Green"
-              value={newUserForm.name}
-              onChange={(e) => setNewUserForm({ ...newUserForm, name: e.target.value })}
-            />
+      {/* LEFT COLUMN: SIGN UP & DEPARTMENTS */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: '0 0 380px', minWidth: '320px' }}>
+        {/* 1. CREATE USER / SIGN UP SECTION */}
+        <div className="glass-panel" style={{ width: '100%', height: 'fit-content' }}>
+          <div style={sectionHeaderStyle}>
+            <Users size={18} style={{ color: 'var(--primary)' }} />
+            <h3 style={{ fontSize: '1.1rem' }}>Register User Account</h3>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Email *</label>
-            <div style={inputWrapper}>
-              <Mail size={14} style={inputIcon} />
-              <input
-                type="email"
-                className="form-input"
-                style={{ paddingLeft: '2.25rem' }}
-                required
-                placeholder="rachel@agency.com"
-                value={newUserForm.email}
-                onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
-              />
-            </div>
-          </div>
+          {error && <div style={errorBanner}>{error}</div>}
+          {successMsg && <div style={successBanner}>{successMsg}</div>}
 
-          <div className="form-group">
-            <label className="form-label">Login Password *</label>
-            <div style={inputWrapper}>
-              <KeyRound size={14} style={inputIcon} />
-              <input
-                type="password"
-                className="form-input"
-                style={{ paddingLeft: '2.25rem' }}
-                required
-                placeholder="Initial password"
-                value={newUserForm.password}
-                onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Access Level Role *</label>
-            <select
-              className="form-select"
-              required
-              value={newUserForm.role}
-              onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value as User['role'] })}
-            >
-              <option value="staff">Staff (Deliveries Only)</option>
-              <option value="manager">Manager (Pipeline & Sprints)</option>
-              <option value="admin">Admin (Full access + Finance)</option>
-            </select>
-          </div>
-
-          {newUserForm.role === 'staff' && (
+          <form onSubmit={handleCreateUser} style={formLayout}>
             <div className="form-group">
-              <label className="form-label">Assign Manager</label>
+              <label className="form-label">Name *</label>
+              <input
+                type="text"
+                className="form-input"
+                required
+                placeholder="e.g. Rachel Green"
+                value={newUserForm.name}
+                onChange={(e) => setNewUserForm({ ...newUserForm, name: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Email *</label>
+              <div style={inputWrapper}>
+                <Mail size={14} style={inputIcon} />
+                <input
+                  type="email"
+                  className="form-input"
+                  style={{ paddingLeft: '2.25rem' }}
+                  required
+                  placeholder="rachel@agency.com"
+                  value={newUserForm.email}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Login Password *</label>
+              <div style={inputWrapper}>
+                <KeyRound size={14} style={inputIcon} />
+                <input
+                  type="password"
+                  className="form-input"
+                  style={{ paddingLeft: '2.25rem' }}
+                  required
+                  placeholder="Initial password"
+                  value={newUserForm.password}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Access Level Role *</label>
               <select
                 className="form-select"
-                value={newUserForm.manager_id}
-                onChange={(e) => setNewUserForm({ ...newUserForm, manager_id: e.target.value })}
+                required
+                value={newUserForm.role}
+                onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value as User['role'] })}
               >
-                <option value="">-- Choose manager --</option>
-                {managersList.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
+                <option value="staff">Staff (Deliveries Only)</option>
+                <option value="manager">Manager (Pipeline & Sprints)</option>
+                <option value="admin">Admin (Full access + Finance)</option>
+              </select>
+            </div>
+
+            {newUserForm.role === 'staff' && (
+              <div className="form-group">
+                <label className="form-label">Assign Manager</label>
+                <select
+                  className="form-select"
+                  value={newUserForm.manager_id}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, manager_id: e.target.value })}
+                >
+                  <option value="">-- Choose manager --</option>
+                  {managersList.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label">Department</label>
+              <select
+                className="form-select"
+                value={newUserForm.department_id}
+                onChange={(e) => setNewUserForm({ ...newUserForm, department_id: e.target.value })}
+              >
+                <option value="">-- Choose department --</option>
+                {departments.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
             </div>
-          )}
 
-          <div className="form-group">
-            <label className="form-label">Department</label>
-            <select
-              className="form-select"
-              value={newUserForm.department_id}
-              onChange={(e) => setNewUserForm({ ...newUserForm, department_id: e.target.value })}
-            >
-              <option value="">-- Choose department --</option>
-              {departments.map(d => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={saving}>
+              {saving ? 'Creating Account...' : 'Sign Up User'}
+            </button>
+          </form>
+        </div>
+
+        {/* 1.5 DEPARTMENTS MANAGEMENT SECTION */}
+        <div className="glass-panel" style={{ width: '100%', height: 'fit-content' }}>
+          <div style={sectionHeaderStyle}>
+            <Building size={18} style={{ color: 'var(--primary)' }} />
+            <h3 style={{ fontSize: '1.1rem' }}>Manage Departments</h3>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={saving}>
-            {saving ? 'Creating Account...' : 'Sign Up User'}
-          </button>
-        </form>
+          <form onSubmit={handleCreateDepartment} style={formLayout}>
+            <div className="form-group">
+              <label className="form-label">Department Name *</label>
+              <input
+                type="text"
+                className="form-input"
+                required
+                placeholder="e.g. Sales, Marketing..."
+                value={newDeptName}
+                onChange={(e) => setNewDeptName(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={deptSaving}>
+              {deptSaving ? 'Creating...' : 'Create Department'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '1.5rem' }}>
+            <label className="form-label" style={{ marginBottom: '0.5rem' }}>Existing Departments</label>
+            {departments.length === 0 ? (
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No departments defined yet.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '180px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                {departments.map(d => (
+                  <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{d.name}</span>
+                    <button
+                      type="button"
+                      style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      onClick={() => handleDeleteDepartment(d.id)}
+                      title="Delete Department"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* 2. DIRECTORY & CREDENTIALS VIEWER */}
@@ -258,10 +343,56 @@ export const CompanyAdmin: React.FC = () => {
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{u.email}</div>
                       </td>
                       <td>
-                        <span style={deptTag}>{getDepartmentName(u.department_id)}</span>
+                        {u.role === 'superadmin' ? (
+                          <span style={deptTag}>{getDepartmentName(u.department_id)}</span>
+                        ) : (
+                          <select
+                            className="form-select"
+                            style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem', width: '100%', minWidth: '120px' }}
+                            value={u.department_id || ''}
+                            onChange={async (e) => {
+                              try {
+                                await db.users.update(u.id, { department_id: e.target.value || null });
+                                await fetchAdminData();
+                              } catch (err: any) {
+                                alert(err.message || 'Failed to update department');
+                              }
+                            }}
+                          >
+                            <option value="">General Overhead</option>
+                            {departments.map(d => (
+                              <option key={d.id} value={d.id}>{d.name}</option>
+                            ))}
+                          </select>
+                        )}
                       </td>
                       <td>
-                        <span style={roleBadgeStyle(u.role)}>{u.role.toUpperCase()}</span>
+                        {isMe || u.role === 'superadmin' ? (
+                          <span style={roleBadgeStyle(u.role)}>{u.role.toUpperCase()}</span>
+                        ) : (
+                          <select
+                            className="form-select"
+                            style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem', width: '100%', minWidth: '100px', fontWeight: 'bold' }}
+                            value={u.role}
+                            onChange={async (e) => {
+                              try {
+                                const newRole = e.target.value as User['role'];
+                                const updates: Partial<User> = { role: newRole };
+                                if (newRole !== 'staff') {
+                                  updates.manager_id = null;
+                                }
+                                await db.users.update(u.id, updates);
+                                await fetchAdminData();
+                              } catch (err: any) {
+                                alert(err.message || 'Failed to update role');
+                              }
+                            }}
+                          >
+                            <option value="staff">STAFF</option>
+                            <option value="manager">MANAGER</option>
+                            <option value="admin">ADMIN</option>
+                          </select>
+                        )}
                       </td>
                       <td>
                         {u.role === 'staff' ? (
