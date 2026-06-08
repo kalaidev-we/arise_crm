@@ -14,6 +14,7 @@ import { ProjectDetails } from './pages/ProjectDetails';
 import { Finance } from './pages/Finance';
 import { CompanyAdmin } from './pages/CompanyAdmin';
 import { MasterAdmin } from './pages/MasterAdmin';
+import { ManageEmployees } from './pages/ManageEmployees';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { ShieldAlert } from 'lucide-react';
 
@@ -107,6 +108,7 @@ const App: React.FC = () => {
       case '/projects': return 'Projects Space';
       case '/finance': return 'Agency Financials';
       case '/admin': return 'Company User Administration';
+      case '/employees': return 'Employee Dashboard & Productivity';
       case '/master-admin': return 'System Master Administration';
       default:
         if (location.pathname.startsWith('/projects/')) return 'Project Execution Details';
@@ -224,6 +226,15 @@ const App: React.FC = () => {
             element={
               <AdminRoute>
                 <CompanyAdmin />
+              </AdminRoute>
+            } 
+          />
+
+          <Route 
+            path="/employees" 
+            element={
+              <AdminRoute>
+                <ManageEmployees />
               </AdminRoute>
             } 
           />

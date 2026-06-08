@@ -3,7 +3,7 @@
 // Database client interface switcher (Supabase <-> Local Mock)
 import { createClient } from '@supabase/supabase-js';
 import { 
-  MockDatabase, User, Lead, Deal, Client, Project, Milestone, Task, Invoice, Expense, Department, Company, hashPassword, SubscriptionRequest
+  MockDatabase, User, Lead, Deal, Client, Project, Milestone, Task, Invoice, Expense, Department, Company, hashPassword, SubscriptionRequest, Attendance, EmploymentEvent
 } from './mockDb';
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || 'https://kciodmfxrnixzfdgcewf.supabase.co').trim();
@@ -852,6 +852,102 @@ export const db = {
         .eq('id', grantId);
       
       if (error) throw error;
+    }
+  },
+
+  attendance: {
+    async list(userId?: string): Promise<Attendance[]> {
+      await delay(200);
+      if (isMock) return MockDatabase.getAttendance(userId);
+
+      let query = getScopedQuery('attendance');
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+
+    async log(record: Omit<Attendance, 'id' | 'company_id' | 'created_at'>): Promise<Attendance> {
+      await delay(300);
+      if (isMock) return MockDatabase.logAttendance(record);
+
+      const currentUser = await db.auth.getCurrentUser();
+      if (!currentUser) throw new Error('Unauthenticated');
+      
+      let companyId = currentUser.company_id;
+      if (currentUser.role === 'superadmin') {
+        const impersonatedId = localStorage.getItem('crm_impersonated_company_id');
+        if (impersonatedId) companyId = impersonatedId;
+      }
+
+      // Check if attendance already exists for this date and user
+      const { data: existing } = await supabase!
+        .from('attendance')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('user_id', record.user_id)
+        .eq('date', record.date)
+        .maybeSingle();
+
+      if (existing) {
+        const { data, error } = await supabase!
+          .from('attendance')
+          .update(record)
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase!
+          .from('attendance')
+          .insert([{ ...record, company_id: companyId }])
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+    }
+  },
+
+  employmentEvents: {
+    async list(userId?: string): Promise<EmploymentEvent[]> {
+      await delay(200);
+      if (isMock) return MockDatabase.getEmploymentEvents(userId);
+
+      let query = getScopedQuery('employment_events');
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+      query = query.order('effective_date', { ascending: false });
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+
+    async log(event: Omit<EmploymentEvent, 'id' | 'company_id' | 'created_at'>): Promise<EmploymentEvent> {
+      await delay(300);
+      if (isMock) return MockDatabase.logEmploymentEvent(event);
+
+      const currentUser = await db.auth.getCurrentUser();
+      if (!currentUser) throw new Error('Unauthenticated');
+
+      let companyId = currentUser.company_id;
+      if (currentUser.role === 'superadmin') {
+        const impersonatedId = localStorage.getItem('crm_impersonated_company_id');
+        if (impersonatedId) companyId = impersonatedId;
+      }
+
+      const { data, error } = await supabase!
+        .from('employment_events')
+        .insert([{ ...event, company_id: companyId }])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
     }
   }
 };

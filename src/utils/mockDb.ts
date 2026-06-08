@@ -33,6 +33,7 @@ export interface User {
   password?: string;
   role: 'superadmin' | 'admin' | 'manager' | 'staff';
   is_default_password?: boolean;
+  title?: string | null; // Added custom job title
   created_at: string;
 }
 
@@ -141,6 +142,28 @@ export interface SubscriptionRequest {
   created_at: string;
 }
 
+export interface Attendance {
+  id: string;
+  company_id: string;
+  user_id: string;
+  date: string;
+  status: 'present' | 'absent' | 'late' | 'leave';
+  check_in: string | null;
+  check_out: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface EmploymentEvent {
+  id: string;
+  company_id: string;
+  user_id: string;
+  event_type: 'promotion' | 'position_change' | 'increment' | 'bonus' | 'hired';
+  details: string;
+  effective_date: string;
+  created_at: string;
+}
+
 const STORAGE_KEYS = {
   COMPANIES: 'crm_companies',
   DEPARTMENTS: 'crm_departments',
@@ -155,6 +178,8 @@ const STORAGE_KEYS = {
   EXPENSES: 'crm_expenses',
   CURRENT_USER: 'crm_current_user',
   SUBSCRIPTION_REQUESTS: 'crm_subscription_requests',
+  ATTENDANCE: 'crm_attendance',
+  EMPLOYMENT_EVENTS: 'crm_employment_events',
 };
 
 // Initial Seed Data (Matches 04_seed.sql)
@@ -246,6 +271,8 @@ export class MockDatabase {
     getStored(STORAGE_KEYS.TASKS, SEED_DATA.tasks);
     getStored(STORAGE_KEYS.INVOICES, SEED_DATA.invoices);
     getStored(STORAGE_KEYS.EXPENSES, SEED_DATA.expenses);
+    getStored(STORAGE_KEYS.ATTENDANCE, []);
+    getStored(STORAGE_KEYS.EMPLOYMENT_EVENTS, []);
 
     // Retroactive deal creation for existing qualified leads
     const leads = getStored<Lead[]>(STORAGE_KEYS.LEADS, []);
@@ -1283,5 +1310,72 @@ export class MockDatabase {
     requests[index].status = status;
     setStored(STORAGE_KEYS.SUBSCRIPTION_REQUESTS, requests);
     return requests[index];
+  }
+
+  // 11. Attendance CRUD
+  static getAttendance(userId?: string): Attendance[] {
+    const myCompanyId = this.getMyCompanyId();
+    const attendance = getStored<Attendance[]>(STORAGE_KEYS.ATTENDANCE, []);
+    let filtered = attendance.filter(a => a.company_id === myCompanyId);
+    if (userId) {
+      filtered = filtered.filter(a => a.user_id === userId);
+    }
+    return filtered;
+  }
+
+  static logAttendance(record: Omit<Attendance, 'id' | 'company_id' | 'created_at'>): Attendance {
+    const myCompanyId = this.getMyCompanyId();
+    const myRole = this.getMyRole();
+    if (myRole !== 'admin' && myRole !== 'superadmin') {
+      throw new Error('Unauthorized: Only Admins can manage attendance');
+    }
+
+    const attendance = getStored<Attendance[]>(STORAGE_KEYS.ATTENDANCE, []);
+    
+    // Remove existing record for this user and date if it exists (Upsert logic)
+    const filtered = attendance.filter(a => !(a.user_id === record.user_id && a.date === record.date && a.company_id === myCompanyId));
+
+    const created: Attendance = {
+      ...record,
+      id: crypto.randomUUID(),
+      company_id: myCompanyId,
+      created_at: new Date().toISOString()
+    };
+
+    filtered.push(created);
+    setStored(STORAGE_KEYS.ATTENDANCE, filtered);
+    return created;
+  }
+
+  // 12. Employment Events CRUD
+  static getEmploymentEvents(userId?: string): EmploymentEvent[] {
+    const myCompanyId = this.getMyCompanyId();
+    const events = getStored<EmploymentEvent[]>(STORAGE_KEYS.EMPLOYMENT_EVENTS, []);
+    let filtered = events.filter(e => e.company_id === myCompanyId);
+    if (userId) {
+      filtered = filtered.filter(e => e.user_id === userId);
+    }
+    // Sort events by effective_date descending
+    return filtered.sort((a, b) => new Date(b.effective_date).getTime() - new Date(a.effective_date).getTime());
+  }
+
+  static logEmploymentEvent(event: Omit<EmploymentEvent, 'id' | 'company_id' | 'created_at'>): EmploymentEvent {
+    const myCompanyId = this.getMyCompanyId();
+    const myRole = this.getMyRole();
+    if (myRole !== 'admin' && myRole !== 'superadmin') {
+      throw new Error('Unauthorized: Only Admins can log employment events');
+    }
+
+    const events = getStored<EmploymentEvent[]>(STORAGE_KEYS.EMPLOYMENT_EVENTS, []);
+    const created: EmploymentEvent = {
+      ...event,
+      id: crypto.randomUUID(),
+      company_id: myCompanyId,
+      created_at: new Date().toISOString()
+    };
+
+    events.push(created);
+    setStored(STORAGE_KEYS.EMPLOYMENT_EVENTS, events);
+    return created;
   }
 }

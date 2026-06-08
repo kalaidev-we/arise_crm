@@ -101,6 +101,16 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ 
 
             {isAdmin && (
               <NavLink 
+                to="/employees" 
+                style={({ isActive }) => navItemStyle(isActive)}
+              >
+                <Briefcase size={18} />
+                <span>Manage Employees</span>
+              </NavLink>
+            )}
+
+            {isAdmin && (
+              <NavLink 
                 to="/admin" 
                 style={({ isActive }) => navItemStyle(isActive)}
               >
