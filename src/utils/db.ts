@@ -244,6 +244,82 @@ export const db = {
   },
 
   deals: {
+    async triggerDealWon(deal: Deal): Promise<void> {
+      // 1. Fetch lead details
+      const { data: lead, error: leadError } = await supabase!
+        .from('leads')
+        .select('*')
+        .eq('id', deal.lead_id)
+        .single();
+      
+      if (leadError) throw leadError;
+
+      // 2. Check/create client
+      const { data: existingClient } = await supabase!
+        .from('clients')
+        .select('*')
+        .eq('deal_id', deal.id)
+        .maybeSingle();
+
+      let client = existingClient;
+      if (!client) {
+        const { data: newClient, error: clientError } = await supabase!
+          .from('clients')
+          .insert([{
+            company_id: deal.company_id,
+            deal_id: deal.id,
+            name: lead.name,
+            contact_info: { email: lead.email || '', phone: lead.phone || '' }
+          }])
+          .select()
+          .single();
+
+        if (clientError) throw clientError;
+        client = newClient;
+      }
+
+      // 3. Check/create project
+      const { data: existingProject } = await supabase!
+        .from('projects')
+        .select('*')
+        .eq('client_id', client.id)
+        .maybeSingle();
+
+      let project = existingProject;
+      if (!project) {
+        const { data: newProject, error: projectError } = await supabase!
+          .from('projects')
+          .insert([{
+            company_id: deal.company_id,
+            client_id: client.id,
+            name: `Project for ${lead.name}`,
+            status: 'pending_approval',
+            manager_id: null,
+            progress: 0.00
+          }])
+          .select()
+          .single();
+
+        if (projectError) throw projectError;
+        project = newProject;
+
+        // 4. Create default milestones
+        const defaultMilestones = ['Phase 1: Planning', 'Phase 2: Design', 'Phase 3: Development', 'Phase 4: Delivery'];
+        const milestonesToInsert = defaultMilestones.map((name, i) => ({
+          company_id: deal.company_id,
+          project_id: project.id,
+          name,
+          sort_order: i + 1
+        }));
+
+        const { error: msError } = await supabase!
+          .from('milestones')
+          .insert(milestonesToInsert);
+
+        if (msError) throw msError;
+      }
+    },
+
     async list(): Promise<Deal[]> {
       await delay(300);
       if (isMock) return MockDatabase.getDeals();
@@ -263,6 +339,15 @@ export const db = {
         .select()
         .single();
       if (error) throw error;
+
+      if (data.stage === 'won') {
+        try {
+          await this.triggerDealWon(data);
+        } catch (triggerErr) {
+          console.error('Failed to trigger project generation:', triggerErr);
+        }
+      }
+
       return data;
     },
 
@@ -277,6 +362,15 @@ export const db = {
         .select()
         .single();
       if (error) throw error;
+
+      if (data.stage === 'won') {
+        try {
+          await this.triggerDealWon(data);
+        } catch (triggerErr) {
+          console.error('Failed to trigger project generation:', triggerErr);
+        }
+      }
+
       return data;
     },
 

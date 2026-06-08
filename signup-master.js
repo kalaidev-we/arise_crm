@@ -6,8 +6,8 @@ const supabaseAnonKey = 'sb_publishable_Ucl6IWssV3TeNNZEzZsl2Q_8PjNVFiJ';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function signupMaster() {
-  const email = 'master@arisecrm.com';
-  const password = 'AriseAdmin@2026';
+  const email = 'master@ariseagency';
+  const password = 'Arise@2026';
   
   console.log(`Attempting to sign up user: ${email}...`);
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({

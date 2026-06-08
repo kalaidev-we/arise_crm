@@ -809,3 +809,18 @@ VALUES (
   TRUE
 ) ON CONFLICT (id) DO NOTHING;
 
+
+-- ============================================================
+-- 14. DEFAULT VALUES FOR AUTOMATIC SCOPING
+-- ============================================================
+ALTER TABLE leads ALTER COLUMN company_id SET DEFAULT get_current_user_company_id();
+ALTER TABLE leads ALTER COLUMN owner_id SET DEFAULT auth.uid();
+ALTER TABLE deals ALTER COLUMN company_id SET DEFAULT get_current_user_company_id();
+ALTER TABLE clients ALTER COLUMN company_id SET DEFAULT get_current_user_company_id();
+ALTER TABLE projects ALTER COLUMN company_id SET DEFAULT get_current_user_company_id();
+ALTER TABLE milestones ALTER COLUMN company_id SET DEFAULT get_current_user_company_id();
+ALTER TABLE tasks ALTER COLUMN company_id SET DEFAULT get_current_user_company_id();
+ALTER TABLE tasks ALTER COLUMN created_by SET DEFAULT auth.uid();
+ALTER TABLE invoices ALTER COLUMN company_id SET DEFAULT get_current_user_company_id();
+ALTER TABLE expenses ALTER COLUMN company_id SET DEFAULT get_current_user_company_id();
+ALTER TABLE departments ALTER COLUMN company_id SET DEFAULT get_current_user_company_id();
