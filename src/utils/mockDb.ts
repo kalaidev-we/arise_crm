@@ -142,72 +142,20 @@ const STORAGE_KEYS = {
 // Initial Seed Data (Matches 04_seed.sql)
 const SEED_DATA = {
   companies: [
-    { id: '00000000-0000-0000-0000-000000000000', name: 'CRM System Admin', created_at: new Date().toISOString() },
-    { id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', name: 'Acme Creative Agency', created_at: new Date().toISOString() },
-    { id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', name: 'Delta Tech Solutions', created_at: new Date().toISOString() }
+    { id: '00000000-0000-0000-0000-000000000000', name: 'CRM System Admin', created_at: new Date().toISOString() }
   ],
-  departments: [
-    { id: 'd11d11d1-1d11-1d11-1d11-1d11d11d11d1', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', name: 'Sales', created_at: new Date().toISOString() },
-    { id: 'd12d12d1-2d12-2d12-2d12-2d12d12d12d2', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', name: 'Design', created_at: new Date().toISOString() },
-    { id: 'd13d13d1-3d13-3d13-3d13-3d13d13d13d3', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', name: 'Development', created_at: new Date().toISOString() },
-    { id: 'd14d14d1-4d14-4d14-4d14-4d14d14d14d4', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', name: 'Marketing', created_at: new Date().toISOString() },
-    { id: 'd15d15d1-5d15-5d15-5d15-5d15d15d15d5', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', name: 'Finance', created_at: new Date().toISOString() },
-    { id: 'd21d21d2-1d21-1d21-1d21-1d21d21d21d1', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', name: 'Sales', created_at: new Date().toISOString() },
-    { id: 'd22d22d2-2d22-2d22-2d22-2d22d22d22d2', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', name: 'Development', created_at: new Date().toISOString() }
-  ],
+  departments: [],
   users: [
-    { id: '00000000-0000-0000-0000-000000000000', company_id: '00000000-0000-0000-0000-000000000000', department_id: null, name: 'Master Admin', email: 'master@crm.com', password: 'masterpass', role: 'superadmin', created_at: new Date().toISOString() },
-    { id: '11111111-1111-1111-1111-111111111111', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', department_id: 'd15d15d1-5d15-5d15-5d15-5d15d15d15d5', name: 'Alice Admin', email: 'alice@acme.com', password: 'adminpass', role: 'admin', created_at: new Date().toISOString() },
-    { id: '22222222-2222-2222-2222-222222222222', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', department_id: 'd11d11d1-1d11-1d11-1d11-1d11d11d11d1', name: 'Bob Manager', email: 'bob@acme.com', password: 'managerpass', role: 'manager', created_at: new Date().toISOString() },
-    { id: '33333333-3333-3333-3333-333333333333', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', department_id: 'd13d13d1-3d13-3d13-3d13-3d13d13d13d3', manager_id: '22222222-2222-2222-2222-222222222222', name: 'Charlie Staff', email: 'charlie@acme.com', password: 'staffpass', role: 'staff', created_at: new Date().toISOString() },
-    { id: '44444444-4444-4444-4444-444444444444', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', department_id: null, name: 'Dave Admin', email: 'dave@delta.com', password: 'davepass', role: 'admin', created_at: new Date().toISOString() },
-    { id: '55555555-5555-5555-5555-555555555555', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', department_id: 'd21d21d2-1d21-1d21-1d21-1d21d21d21d1', name: 'Eve Manager', email: 'eve@delta.com', password: 'evepass', role: 'manager', created_at: new Date().toISOString() },
-    { id: '66666666-6666-6666-6666-666666666666', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', department_id: 'd22d22d2-2d22-2d22-2d22-2d22d22d22d2', manager_id: '55555555-5555-5555-5555-555555555555', name: 'Frank Staff', email: 'frank@delta.com', password: 'frankpass', role: 'staff', created_at: new Date().toISOString() }
+    { id: '00000000-0000-0000-0000-000000000000', company_id: '00000000-0000-0000-0000-000000000000', department_id: null, name: 'Master Admin', email: 'master@crm.com', password: 'masterpass', role: 'superadmin', created_at: new Date().toISOString() }
   ],
-  leads: [
-    { id: 'l1111111-1111-1111-1111-111111111111', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', owner_id: '22222222-2222-2222-2222-222222222222', name: 'John Smith', phone: '555-0199', email: 'john@smithcorp.com', title: 'Founder', status: 'qualified', created_at: new Date().toISOString() },
-    { id: 'l1222222-2222-2222-2222-222222222222', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', owner_id: '33333333-3333-3333-3333-333333333333', name: 'Sarah Jenkins', phone: '555-0188', email: 'sarah@webventures.com', title: 'VP Marketing', status: 'contacted', created_at: new Date().toISOString() },
-    { id: 'l1333333-3333-3333-3333-333333333333', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', owner_id: '33333333-3333-3333-3333-333333333333', name: 'Mike Miller', phone: '555-0177', email: 'mike@millerbrand.com', title: 'Owner', status: 'new', created_at: new Date().toISOString() },
-    { id: 'l2111111-1111-1111-1111-111111111111', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', owner_id: '55555555-5555-5555-5555-555555555555', name: 'Rachel Green', phone: '555-0200', email: 'rachel@ralphlauren.com', title: 'Creative Director', status: 'qualified', created_at: new Date().toISOString() }
-  ],
-  deals: [
-    { id: 'e1111111-1111-1111-1111-111111111111', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', lead_id: 'l1111111-1111-1111-1111-111111111111', value: 25000, stage: 'proposal', status: 'active', created_at: new Date().toISOString() },
-    { id: 'e1222222-2222-2222-2222-222222222222', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', lead_id: 'l1222222-2222-2222-2222-222222222222', value: 12000, stage: 'contacted', status: 'active', created_at: new Date().toISOString() },
-    { id: 'e2111111-1111-1111-1111-111111111111', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', lead_id: 'l2111111-1111-1111-1111-111111111111', value: 45000, stage: 'negotiation', status: 'active', created_at: new Date().toISOString() }
-  ],
-  clients: [
-    { id: 'c1111111-1111-1111-1111-111111111111', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', deal_id: null, name: 'Google Inc', contact_info: { email: 'contact@google.com', phone: '555-0100' }, created_at: new Date().toISOString() },
-    { id: 'c1222222-2222-2222-2222-222222222222', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', deal_id: null, name: 'Stripe', contact_info: { email: 'billing@stripe.com', phone: '555-0200' }, created_at: new Date().toISOString() },
-    { id: 'c2111111-1111-1111-1111-111111111111', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', deal_id: null, name: 'Netflix', contact_info: { email: 'finance@netflix.com', phone: '555-0300' }, created_at: new Date().toISOString() }
-  ],
-  projects: [
-    { id: 'p1111111-1111-1111-1111-111111111111', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', client_id: 'c1111111-1111-1111-1111-111111111111', name: 'Google Redesign 2026', status: 'active', manager_id: '22222222-2222-2222-2222-222222222222', progress: 50.00, created_at: new Date().toISOString() },
-    { id: 'p1222222-2222-2222-2222-222222222222', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', client_id: 'c1222222-2222-2222-2222-222222222222', name: 'Stripe Connect Integration', status: 'active', manager_id: '22222222-2222-2222-2222-222222222222', progress: 0.00, created_at: new Date().toISOString() },
-    { id: 'p2111111-1111-1111-1111-111111111111', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', client_id: 'c2111111-1111-1111-1111-111111111111', name: 'Netflix Ads Engine', status: 'active', manager_id: '55555555-5555-5555-5555-555555555555', progress: 100.00, created_at: new Date().toISOString() }
-  ],
-  milestones: [
-    { id: 'm1111111-1111-1111-1111-111111111111', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', project_id: 'p1111111-1111-1111-1111-111111111111', name: 'Phase 1: Wireframing', sort_order: 1, created_at: new Date().toISOString() },
-    { id: 'm1222222-2222-2222-2222-222222222222', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', project_id: 'p1111111-1111-1111-1111-111111111111', name: 'Phase 2: UI Implementation', sort_order: 2, created_at: new Date().toISOString() },
-    { id: 'm1333333-3333-3333-3333-333333333333', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', project_id: 'p1222222-2222-2222-2222-222222222222', name: 'Phase 1: API Discovery', sort_order: 1, created_at: new Date().toISOString() },
-    { id: 'm2111111-1111-1111-1111-111111111111', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', project_id: 'p2111111-1111-1111-1111-111111111111', name: 'Phase 1: Architecture Design', sort_order: 1, created_at: new Date().toISOString() }
-  ],
-  tasks: [
-    { id: 't1111111-1111-1111-1111-111111111111', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', milestone_id: 'm1111111-1111-1111-1111-111111111111', title: 'Create Homepage Wireframe', description: 'Design mobile and desktop headers', assigned_to: '33333333-3333-3333-3333-333333333333', created_by: '22222222-2222-2222-2222-222222222222', status: 'done', due_date: '2026-06-15', completed_by: '33333333-3333-3333-3333-333333333333', completed_at: new Date().toISOString(), created_at: new Date().toISOString() },
-    { id: 't1222222-2222-2222-2222-222222222222', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', milestone_id: 'm1111111-1111-1111-1111-111111111111', title: 'Present wireframes to client', description: 'Feedback gathering session', assigned_to: '22222222-2222-2222-2222-222222222222', created_by: '22222222-2222-2222-2222-222222222222', status: 'todo', due_date: '2026-06-18', completed_by: null, completed_at: null, created_at: new Date().toISOString() },
-    { id: 't1333333-3333-3333-3333-333333333333', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', milestone_id: 'm1333333-3333-3333-3333-333333333333', title: 'Read Stripe Connect documentation', description: 'Focus on custom accounts creation flow', assigned_to: '33333333-3333-3333-3333-333333333333', created_by: '22222222-2222-2222-2222-222222222222', status: 'todo', due_date: '2026-06-10', completed_by: null, completed_at: null, created_at: new Date().toISOString() },
-    { id: 't2111111-1111-1111-1111-111111111111', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', milestone_id: 'm2111111-1111-1111-1111-111111111111', title: 'Database Schema definition', description: 'Define columns for ads bidding model', assigned_to: '66666666-6666-6666-6666-666666666666', created_by: '55555555-5555-5555-5555-555555555555', status: 'done', due_date: '2026-06-01', completed_by: '66666666-6666-6666-6666-666666666666', completed_at: new Date().toISOString(), created_at: new Date().toISOString() }
-  ],
-  invoices: [
-    { id: 'i1111111-1111-1111-1111-111111111111', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', project_id: 'p1111111-1111-1111-1111-111111111111', client_id: 'c1111111-1111-1111-1111-111111111111', amount: 15000, status: 'paid', created_at: new Date().toISOString() },
-    { id: 'i1222222-2222-2222-2222-222222222222', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', project_id: 'p1111111-1111-1111-1111-111111111111', client_id: 'c1111111-1111-1111-1111-111111111111', amount: 10000, status: 'unpaid', created_at: new Date().toISOString() },
-    { id: 'i2111111-1111-1111-1111-111111111111', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', project_id: 'p2111111-1111-1111-1111-111111111111', client_id: 'c2111111-1111-1111-1111-111111111111', amount: 40000, status: 'paid', created_at: new Date().toISOString() }
-  ],
-  expenses: [
-    { id: 'x1111111-1111-1111-1111-111111111111', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', project_id: 'p1111111-1111-1111-1111-111111111111', category: 'salary', amount: 8000, description: 'Lead developer salary contribution', date: '2026-06-01', created_at: new Date().toISOString() },
-    { id: 'x1222222-2222-2222-2222-222222222222', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', project_id: 'p1111111-1111-1111-1111-111111111111', category: 'freelancer', amount: 3500, description: 'Freelance illustrator', date: '2026-06-03', created_at: new Date().toISOString() },
-    { id: 'x1333333-3333-3333-3333-333333333333', company_id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1', project_id: null, category: 'tools', amount: 500, description: 'Monthly Figma Enterprise license', date: '2026-06-01', created_at: new Date().toISOString() },
-    { id: 'x2111111-1111-1111-1111-111111111111', company_id: 'b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2', project_id: 'p2111111-1111-1111-1111-111111111111', category: 'salary', amount: 15000, description: 'Senior developer contribution', date: '2026-06-01', created_at: new Date().toISOString() }
-  ]
+  leads: [],
+  deals: [],
+  clients: [],
+  projects: [],
+  milestones: [],
+  tasks: [],
+  invoices: [],
+  expenses: []
 };
 
 // Database Initialization Helper
@@ -226,6 +174,12 @@ const setStored = <T>(key: string, value: T): void => {
 
 export class MockDatabase {
   static init() {
+    // If local storage has the old seed data, clean it up automatically
+    const companies = localStorage.getItem(STORAGE_KEYS.COMPANIES);
+    if (companies && companies.includes('a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1')) {
+      Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+    }
+
     getStored(STORAGE_KEYS.COMPANIES, SEED_DATA.companies);
     getStored(STORAGE_KEYS.DEPARTMENTS, SEED_DATA.departments);
     

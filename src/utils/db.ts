@@ -188,7 +188,9 @@ export const db = {
         MockDatabase.deleteUser(id);
         return;
       }
-      const { error } = await supabase!.from('users').delete().eq('id', id);
+      const { error } = await supabase!.rpc('delete_tenant_user', {
+        p_user_id: id
+      });
       if (error) throw error;
     }
   },
@@ -535,7 +537,9 @@ export const db = {
         MockDatabase.superadminDeleteCompany(id);
         return;
       }
-      const { error } = await supabase!.from('companies').delete().eq('id', id);
+      const { error } = await supabase!.rpc('delete_company_cascade', {
+        p_company_id: id
+      });
       if (error) throw error;
     },
 
@@ -571,7 +575,9 @@ export const db = {
         MockDatabase.superadminDeleteTenantAdmin(id);
         return;
       }
-      const { error } = await supabase!.from('users').delete().eq('id', id);
+      const { error } = await supabase!.rpc('delete_tenant_user', {
+        p_user_id: id
+      });
       if (error) throw error;
     },
 

@@ -433,7 +433,13 @@ BEGIN
 
   -- Create public user profile
   INSERT INTO users (id, company_id, name, email, role, is_default_password)
-  VALUES (v_user_id, p_company_id, p_name, p_email, 'admin', TRUE);
+  VALUES (v_user_id, p_company_id, p_name, p_email, 'admin', TRUE)
+  ON CONFLICT (id) DO UPDATE
+  SET company_id = EXCLUDED.company_id,
+      name = EXCLUDED.name,
+      email = EXCLUDED.email,
+      role = EXCLUDED.role,
+      is_default_password = EXCLUDED.is_default_password;
 
   -- Return created user
   RETURN QUERY
@@ -563,7 +569,15 @@ BEGIN
 
   -- Create public user profile
   INSERT INTO users (id, company_id, department_id, manager_id, name, email, role, is_default_password)
-  VALUES (v_user_id, p_company_id, p_department_id, p_manager_id, p_name, p_email, p_role, TRUE);
+  VALUES (v_user_id, p_company_id, p_department_id, p_manager_id, p_name, p_email, p_role, TRUE)
+  ON CONFLICT (id) DO UPDATE
+  SET company_id = EXCLUDED.company_id,
+      department_id = EXCLUDED.department_id,
+      manager_id = EXCLUDED.manager_id,
+      name = EXCLUDED.name,
+      email = EXCLUDED.email,
+      role = EXCLUDED.role,
+      is_default_password = EXCLUDED.is_default_password;
 
   -- Return created user
   RETURN QUERY
@@ -614,6 +628,64 @@ BEGIN
   UPDATE users
   SET is_default_password = (auth.uid() != p_user_id)
   WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- ============================================================
+-- STORED PROCEDURE: DELETE TENANT USER
+-- ============================================================
+-- Deletes user profile and auth account atomically from DB side
+-- Restricts deletion based on role boundaries (admins only delete own company users)
+-- Called via: SELECT delete_tenant_user(user_id)
+
+CREATE OR REPLACE FUNCTION delete_tenant_user(p_user_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  -- Authorization check: only admins/superadmins can delete users
+  IF (SELECT role FROM users WHERE id = auth.uid()) NOT IN ('superadmin', 'admin') THEN
+    RAISE EXCEPTION 'Only admins can delete users';
+  END IF;
+
+  -- If caller is admin, they can only delete users in their own company
+  IF (SELECT role FROM users WHERE id = auth.uid()) = 'admin' AND (SELECT company_id FROM users WHERE id = p_user_id) != (SELECT company_id FROM users WHERE id = auth.uid()) THEN
+    RAISE EXCEPTION 'Admins can only delete users in their own company';
+  END IF;
+
+  -- Prevent deleting self
+  IF auth.uid() = p_user_id THEN
+    RAISE EXCEPTION 'Cannot delete your own account';
+  END IF;
+
+  -- Delete from public.users first
+  DELETE FROM users WHERE id = p_user_id;
+
+  -- Delete from auth.users (which cascades to auth.identities)
+  DELETE FROM auth.users WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- ============================================================
+-- STORED PROCEDURE: DELETE COMPANY CASCADE
+-- ============================================================
+-- Deletes a company and all its users (both public and auth accounts) atomically
+-- Restricted to superadmins
+-- Called via: SELECT delete_company_cascade(company_id)
+
+CREATE OR REPLACE FUNCTION delete_company_cascade(p_company_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  -- Authorization check: only superadmins can delete companies
+  IF NOT is_current_user_superadmin() THEN
+    RAISE EXCEPTION 'Only superadmins can delete companies';
+  END IF;
+
+  -- 1. Delete all users belonging to this company from auth.users (which cascades to public.users and auth.identities)
+  DELETE FROM auth.users WHERE id IN (SELECT id FROM users WHERE company_id = p_company_id);
+
+  -- 2. Delete the company itself (which cascades to all other company-scoped tables)
+  DELETE FROM companies WHERE id = p_company_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
