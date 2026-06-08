@@ -11,8 +11,8 @@ async function testConnection() {
   // Test Login
   console.log('Attempting login for master...');
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email: 'master@ariseagency.in',
-    password: 'kalai@125'
+    email: 'master@arisecrm.com',
+    password: 'AriseAdmin@2026'
   });
 
   if (authError) {
