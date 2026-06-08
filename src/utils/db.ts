@@ -6,8 +6,8 @@ import {
   MockDatabase, User, Lead, Deal, Client, Project, Milestone, Task, Invoice, Expense, Department, Company, hashPassword 
 } from './mockDb';
 
-const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
-const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || 'https://kciodmfxrnixzfdgcewf.supabase.co').trim();
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_Ucl6IWssV3TeNNZEzZsl2Q_8PjNVFiJ').trim();
 
 export const isMock = !supabaseUrl || !supabaseAnonKey;
 

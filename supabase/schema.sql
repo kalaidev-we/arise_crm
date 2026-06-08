@@ -705,3 +705,53 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+
+-- ============================================================
+-- 13. INITIAL SEED DATA (SUPERADMIN)
+-- ============================================================
+-- Create System Company
+INSERT INTO companies (id, name) 
+VALUES ('00000000-0000-0000-0000-000000000000', 'AriseAgency') 
+ON CONFLICT (id) DO NOTHING;
+
+-- Create Super Admin in Auth schema
+INSERT INTO auth.users (
+  id, instance_id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, aud, created_at, updated_at, role
+) VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000000',
+  'admin@ariseagency.com',
+  crypt('password123', gen_salt('bf')),
+  now(),
+  '{"provider": "email", "providers": ["email"]}',
+  '{}',
+  'authenticated',
+  now(),
+  now(),
+  'authenticated'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO auth.identities (
+  id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
+) VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  format('{"sub":"%s","email":"%s"}', '00000000-0000-0000-0000-000000000001', 'admin@ariseagency.com')::jsonb,
+  'email',
+  '00000000-0000-0000-0000-000000000001',
+  now(),
+  now(),
+  now()
+) ON CONFLICT (id) DO NOTHING;
+
+-- Create Super Admin in Public schema
+INSERT INTO users (id, company_id, name, email, role, is_default_password)
+VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000000',
+  'System Superadmin',
+  'admin@ariseagency.com',
+  'superadmin',
+  TRUE
+) ON CONFLICT (id) DO NOTHING;
+
