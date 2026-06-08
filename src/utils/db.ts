@@ -3,7 +3,7 @@
 // Database client interface switcher (Supabase <-> Local Mock)
 import { createClient } from '@supabase/supabase-js';
 import { 
-  MockDatabase, User, Lead, Deal, Client, Project, Milestone, Task, Invoice, Expense, Department, Company, hashPassword 
+  MockDatabase, User, Lead, Deal, Client, Project, Milestone, Task, Invoice, Expense, Department, Company, hashPassword, SubscriptionRequest
 } from './mockDb';
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || 'https://kciodmfxrnixzfdgcewf.supabase.co').trim();
@@ -519,12 +519,12 @@ export const db = {
       return data || [];
     },
 
-    async createCompany(name: string): Promise<Company> {
+    async createCompany(name: string, logoUrl?: string, crmName?: string): Promise<Company> {
       await delay(300);
-      if (isMock) return MockDatabase.superadminCreateCompany(name);
+      if (isMock) return MockDatabase.superadminCreateCompany(name, logoUrl, crmName);
       const { data, error } = await supabase!
         .from('companies')
-        .insert([{ name }])
+        .insert([{ name, logo_url: logoUrl || null, crm_name: crmName || null }])
         .select()
         .single();
       if (error) throw error;
@@ -626,6 +626,44 @@ export const db = {
       }
       const { error } = await supabase!.from('departments').delete().eq('id', id);
       if (error) throw error;
+    }
+  },
+
+  subscriptionRequests: {
+    async list(): Promise<SubscriptionRequest[]> {
+      await delay(300);
+      if (isMock) return MockDatabase.getSubscriptionRequests();
+      const { data, error } = await supabase!
+        .from('subscription_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+
+    async create(request: Omit<SubscriptionRequest, 'id' | 'status' | 'created_at'>): Promise<SubscriptionRequest> {
+      await delay(400);
+      if (isMock) return MockDatabase.insertSubscriptionRequest(request);
+      const { data, error } = await supabase!
+        .from('subscription_requests')
+        .insert([request])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+
+    async updateStatus(id: string, status: 'approved' | 'rejected'): Promise<SubscriptionRequest> {
+      await delay(300);
+      if (isMock) return MockDatabase.updateSubscriptionRequestStatus(id, status);
+      const { data, error } = await supabase!
+        .from('subscription_requests')
+        .update({ status })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
     }
   }
 };

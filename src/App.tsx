@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { Menu } from 'lucide-react';
 import { Header } from './components/Header';
 import { Login } from './pages/Login';
+import { RequestAccess } from './pages/RequestAccess';
 import { Dashboard } from './pages/Dashboard';
 import { Leads } from './pages/Leads';
 import { Deals } from './pages/Deals';
@@ -143,6 +144,12 @@ const App: React.FC = () => {
           <Route 
             path="/login" 
             element={user ? <Navigate to="/" replace /> : <Login />} 
+          />
+
+          {/* Public Request Access Route */}
+          <Route 
+            path="/request-access" 
+            element={user ? <Navigate to="/" replace /> : <RequestAccess />} 
           />
 
           {/* Protected General Routes */}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../utils/db';
-import { Company, User } from '../utils/mockDb';
+import { Company, User, SubscriptionRequest } from '../utils/mockDb';
 import { 
   Building, 
   Shield, 
@@ -11,17 +11,19 @@ import {
   Mail, 
   Building2, 
   Sparkles,
-  UserCheck
+  UserCheck,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export const MasterAdmin: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [admins, setAdmins] = useState<User[]>([]);
+  const [requests, setRequests] = useState<SubscriptionRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'tenants' | 'admins'>('tenants');
+  const [activeTab, setActiveTab] = useState<'tenants' | 'admins' | 'requests'>('tenants');
 
   // Form states
-  const [companyForm, setCompanyForm] = useState({ name: '' });
+  const [companyForm, setCompanyForm] = useState({ name: '', logo_url: '', crm_name: '' });
   const [adminForm, setAdminForm] = useState({
     company_id: '',
     name: '',
@@ -36,12 +38,14 @@ export const MasterAdmin: React.FC = () => {
   const fetchMasterData = async () => {
     setLoading(true);
     try {
-      const [companiesData, adminsData] = await Promise.all([
+      const [companiesData, adminsData, requestsData] = await Promise.all([
         db.superadmin.getCompanies(),
-        db.superadmin.getTenantAdmins()
+        db.superadmin.getTenantAdmins(),
+        db.subscriptionRequests.list()
       ]);
       setCompanies(companiesData);
       setAdmins(adminsData);
+      setRequests(requestsData);
     } catch (err) {
       console.error('Failed to load system management directories:', err);
     } finally {
@@ -60,9 +64,13 @@ export const MasterAdmin: React.FC = () => {
     setSuccess(null);
     try {
       if (!companyForm.name.trim()) throw new Error('Tenant name is required');
-      const created = await db.superadmin.createCompany(companyForm.name.trim());
+      const created = await db.superadmin.createCompany(
+        companyForm.name.trim(),
+        companyForm.logo_url.trim() || undefined,
+        companyForm.crm_name.trim() || undefined
+      );
       setSuccess(`Tenant "${created.name}" has been successfully provisioned.`);
-      setCompanyForm({ name: '' });
+      setCompanyForm({ name: '', logo_url: '', crm_name: '' });
       await fetchMasterData();
     } catch (err: any) {
       setError(err.message || 'Failed to create company');
@@ -138,6 +146,45 @@ export const MasterAdmin: React.FC = () => {
     }
   };
 
+  const handleApproveRequest = async (req: SubscriptionRequest) => {
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const company = await db.superadmin.createCompany(req.company_name, req.logo_url, req.crm_name);
+      const defaultPassword = 'welcome123';
+      const admin = await db.superadmin.createTenantAdmin(
+        company.id, 
+        req.contact_name, 
+        req.email, 
+        defaultPassword
+      );
+      await db.subscriptionRequests.updateStatus(req.id, 'approved');
+      setSuccess(`Tenant "${company.name}" has been successfully provisioned. Created admin "${admin.name}" (${admin.email}) with temporary password: "${defaultPassword}"`);
+      await fetchMasterData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to approve subscription request');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRejectRequest = async (id: string) => {
+    if (!window.confirm('Are you sure you want to reject this subscription request?')) return;
+    setSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await db.subscriptionRequests.updateStatus(id, 'rejected');
+      setSuccess('Subscription request has been rejected.');
+      await fetchMasterData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to reject subscription request');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const getCompanyName = (companyId: string) => {
     const match = companies.find(c => c.id === companyId);
     return match ? match.name : 'Unknown Tenant';
@@ -170,14 +217,14 @@ export const MasterAdmin: React.FC = () => {
           </div>
         </div>
 
-        <div className="glass-panel kpi-card" style={{ border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-          <div className="kpi-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#34d399' }}>
-            <Sparkles size={20} />
+        <div className="glass-panel kpi-card" style={{ border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+          <div className="kpi-icon-wrapper" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24' }}>
+            <Building size={20} />
           </div>
           <div>
-            <div style={kpiLabelStyle}>System Security</div>
-            <div className="kpi-value">Active</div>
-            <div style={kpiSubtextStyle}>All tenant records completely isolated</div>
+            <div style={kpiLabelStyle}>Pending Requests</div>
+            <div className="kpi-value">{requests.filter(r => r.status === 'pending').length}</div>
+            <div style={kpiSubtextStyle}>Companies waiting setup approval</div>
           </div>
         </div>
       </div>
@@ -208,6 +255,18 @@ export const MasterAdmin: React.FC = () => {
         >
           Tenant Administrators
         </button>
+        <button
+          onClick={() => { setActiveTab('requests'); setError(null); setSuccess(null); }}
+          className="btn"
+          style={{
+            background: activeTab === 'requests' ? 'rgba(139, 92, 246, 0.12)' : 'transparent',
+            borderColor: activeTab === 'requests' ? 'var(--primary)' : 'transparent',
+            color: activeTab === 'requests' ? 'var(--text-primary)' : 'var(--text-secondary)',
+            padding: '0.5rem 1rem'
+          }}
+        >
+          Access Requests ({requests.filter(r => r.status === 'pending').length})
+        </button>
       </div>
 
       {/* Main Alert notifications */}
@@ -215,7 +274,7 @@ export const MasterAdmin: React.FC = () => {
       {success && <div style={successStyle}>{success}</div>}
 
       {/* Render selected panel view */}
-      {activeTab === 'tenants' ? (
+      {activeTab === 'tenants' && (
         <div className="grid-master-admin">
           {/* Create tenant form */}
           <div className="glass-panel" style={{ padding: '1.5rem', height: 'fit-content' }}>
@@ -224,7 +283,7 @@ export const MasterAdmin: React.FC = () => {
               <h3 style={{ fontSize: '1.05rem' }}>Provision Tenant Unit</h3>
             </div>
             
-            <form onSubmit={handleCreateCompany} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+            <form onSubmit={handleCreateCompany} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginTop: '1rem' }}>
               <div className="form-group">
                 <label className="form-label">Company / Tenant Name *</label>
                 <div style={inputContainer}>
@@ -236,7 +295,37 @@ export const MasterAdmin: React.FC = () => {
                     required
                     placeholder="e.g. Omega Software Group"
                     value={companyForm.name}
-                    onChange={(e) => setCompanyForm({ name: e.target.value })}
+                    onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Custom CRM Brand Name (Optional)</label>
+                <div style={inputContainer}>
+                  <Sparkles size={14} style={inputIcon} />
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ paddingLeft: '2.25rem' }}
+                    placeholder="e.g. Omega CRM"
+                    value={companyForm.crm_name}
+                    onChange={(e) => setCompanyForm({ ...companyForm, crm_name: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Company Logo URL (Optional)</label>
+                <div style={inputContainer}>
+                  <ImageIcon size={14} style={inputIcon} />
+                  <input
+                    type="url"
+                    className="form-input"
+                    style={{ paddingLeft: '2.25rem' }}
+                    placeholder="https://example.com/logo.png"
+                    value={companyForm.logo_url}
+                    onChange={(e) => setCompanyForm({ ...companyForm, logo_url: e.target.value })}
                   />
                 </div>
               </div>
@@ -276,8 +365,25 @@ export const MasterAdmin: React.FC = () => {
                     companies.map(c => (
                       <tr key={c.id}>
                         <td>
-                          <div style={{ fontWeight: 600 }}>{c.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>UUID: {c.id}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ width: '28px', height: '28px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                              {c.logo_url ? (
+                                <img 
+                                  src={c.logo_url} 
+                                  alt="Tenant Logo" 
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                  onError={(e) => {
+                                    (e.target as HTMLElement).style.display = 'none';
+                                  }}
+                                />
+                              ) : null}
+                              <Building size={14} style={{ color: 'var(--text-muted)' }} />
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600 }}>{c.name}</div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>UUID: {c.id}</div>
+                            </div>
+                          </div>
                         </td>
                         <td style={{ color: 'var(--text-secondary)' }}>
                           {new Date(c.created_at).toLocaleDateString()}
@@ -301,7 +407,9 @@ export const MasterAdmin: React.FC = () => {
             </div>
           </div>
         </div>
-      ) : (
+      )}
+
+      {activeTab === 'admins' && (
         <div className="grid-master-admin">
           {/* Create admin form */}
           <div className="glass-panel" style={{ padding: '1.5rem', height: 'fit-content' }}>
@@ -445,8 +553,155 @@ export const MasterAdmin: React.FC = () => {
         </div>
       )}
 
+      {activeTab === 'requests' && (
+        <div className="glass-panel" style={{ padding: '1.5rem 0 0 0', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 1.5rem 1rem 1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+            <Building2 size={16} style={{ color: 'var(--primary)' }} />
+            <h3 style={{ fontSize: '1.05rem' }}>Subscription Access Requests</h3>
+          </div>
+
+          <div className="table-container">
+            <table className="custom-table" style={{ fontSize: '0.85rem' }}>
+              <thead>
+                <tr>
+                  <th>Company Details</th>
+                  <th>Contact Details</th>
+                  <th>Plan Tier</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Syncing requests...</td>
+                  </tr>
+                ) : requests.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No access requests submitted</td>
+                  </tr>
+                ) : (
+                  requests.map(r => (
+                    <tr key={r.id}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                            {r.logo_url ? (
+                              <img 
+                                src={r.logo_url} 
+                                alt="Company Logo" 
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = 'none';
+                                }}
+                              />
+                            ) : null}
+                            <Building size={16} style={{ color: 'var(--text-muted)' }} />
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{r.company_name}</div>
+                            <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                              Submitted {new Date(r.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 500 }}>{r.contact_name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{r.email}</div>
+                        {r.phone && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.phone}</div>}
+                      </td>
+                      <td>
+                        <span style={planPillStyle(r.plan)}>
+                          {r.plan.toUpperCase()}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={statusPillStyle(r.status)}>
+                          {r.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        {r.status === 'pending' ? (
+                          <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'flex-end' }}>
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                              onClick={() => handleApproveRequest(r)}
+                              disabled={saving}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', color: '#f87171', borderColor: 'rgba(239,68,68,0.2)' }}
+                              onClick={() => handleRejectRequest(r.id)}
+                              disabled={saving}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            Processed
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
     </div>
   );
+};
+
+const planPillStyle = (plan: string): React.CSSProperties => {
+  let bg = 'rgba(59, 130, 246, 0.12)';
+  let color = '#60a5fa';
+  if (plan === 'growth') {
+    bg = 'rgba(139, 92, 246, 0.12)';
+    color = '#c084fc';
+  } else if (plan === 'enterprise') {
+    bg = 'rgba(16, 185, 129, 0.12)';
+    color = '#34d399';
+  }
+  return {
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    background: bg,
+    color,
+    padding: '0.15rem 0.45rem',
+    borderRadius: '4px',
+    border: '1px solid rgba(255,255,255,0.02)'
+  };
+};
+
+const statusPillStyle = (status: string): React.CSSProperties => {
+  let bg = 'rgba(245, 158, 11, 0.12)';
+  let color = '#fbbf24';
+  if (status === 'approved') {
+    bg = 'rgba(16, 185, 129, 0.12)';
+    color = '#34d399';
+  } else if (status === 'rejected') {
+    bg = 'rgba(239, 68, 68, 0.12)';
+    color = '#f87171';
+  }
+  return {
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    background: bg,
+    color,
+    padding: '0.15rem 0.45rem',
+    borderRadius: '4px',
+    border: '1px solid rgba(255,255,255,0.02)'
+  };
 };
 
 // --- MASTER ADMIN STYLES ---

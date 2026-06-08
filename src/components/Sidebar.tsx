@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ isOpen, onClose }) => {
-  const { user, logout, isAdmin, isSuperAdmin, companyName, setChangePasswordModalOpen } = useAuth();
+  const { user, logout, isAdmin, isSuperAdmin, companyName, companyLogoUrl, crmName, setChangePasswordModalOpen } = useAuth();
 
   if (!user) return null;
 
@@ -23,9 +23,20 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ 
       {isOpen && <div className="mobile-overlay" onClick={onClose} style={overlayStyle} />}
       <aside style={sidebarStyle} className={`sidebar-container ${isOpen ? 'open' : ''}`}>
       <div style={logoContainerStyle}>
-        <Building size={24} style={{ color: 'var(--primary)' }} />
+        {companyLogoUrl ? (
+          <img 
+            src={companyLogoUrl} 
+            alt="Company Logo" 
+            style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover', flexShrink: 0 }} 
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        ) : (
+          <Building size={24} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+        )}
         <div style={logoTextStyle}>
-          <span style={logoMainStyle}>AriseAgency</span>
+          <span style={logoMainStyle}>{crmName || 'AriseAgency'}</span>
           <span style={logoSubStyle}>CRM </span>
         </div>
       </div>

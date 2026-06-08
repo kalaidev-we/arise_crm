@@ -11,6 +11,8 @@ export function hashPassword(password: string): string {
 export interface Company {
   id: string;
   name: string;
+  logo_url?: string;
+  crm_name?: string;
   created_at: string;
 }
 
@@ -126,6 +128,19 @@ export interface Expense {
   created_at: string;
 }
 
+export interface SubscriptionRequest {
+  id: string;
+  company_name: string;
+  contact_name: string;
+  email: string;
+  phone?: string;
+  logo_url?: string;
+  crm_name?: string;
+  plan: 'starter' | 'growth' | 'enterprise';
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+}
+
 const STORAGE_KEYS = {
   COMPANIES: 'crm_companies',
   DEPARTMENTS: 'crm_departments',
@@ -139,6 +154,7 @@ const STORAGE_KEYS = {
   INVOICES: 'crm_invoices',
   EXPENSES: 'crm_expenses',
   CURRENT_USER: 'crm_current_user',
+  SUBSCRIPTION_REQUESTS: 'crm_subscription_requests',
 };
 
 // Initial Seed Data (Matches 04_seed.sql)
@@ -1065,7 +1081,7 @@ export class MockDatabase {
     return companies.filter(c => c.id !== '00000000-0000-0000-0000-000000000000');
   }
 
-  static superadminCreateCompany(name: string): Company {
+  static superadminCreateCompany(name: string, logoUrl?: string, crmName?: string): Company {
     const myRole = this.getMyRole();
     if (myRole !== 'superadmin') throw new Error('Unauthorized: Restricted to System Master Admin only');
 
@@ -1078,6 +1094,8 @@ export class MockDatabase {
     const created: Company = {
       id: crypto.randomUUID(),
       name,
+      logo_url: logoUrl,
+      crm_name: crmName,
       created_at: new Date().toISOString()
     };
     companies.push(created);
@@ -1206,5 +1224,37 @@ export class MockDatabase {
     users[index].password = hashPassword(pass);
     users[index].is_default_password = true;
     setStored(STORAGE_KEYS.USERS, users);
+  }
+
+  static getSubscriptionRequests(): SubscriptionRequest[] {
+    const myRole = this.getMyRole();
+    if (myRole !== 'superadmin') throw new Error('Unauthorized: Restricted to System Master Admin only');
+    return getStored<SubscriptionRequest[]>(STORAGE_KEYS.SUBSCRIPTION_REQUESTS, []);
+  }
+
+  static insertSubscriptionRequest(req: Omit<SubscriptionRequest, 'id' | 'status' | 'created_at'>): SubscriptionRequest {
+    const requests = getStored<SubscriptionRequest[]>(STORAGE_KEYS.SUBSCRIPTION_REQUESTS, []);
+    const created: SubscriptionRequest = {
+      ...req,
+      id: crypto.randomUUID(),
+      status: 'pending',
+      created_at: new Date().toISOString()
+    };
+    requests.push(created);
+    setStored(STORAGE_KEYS.SUBSCRIPTION_REQUESTS, requests);
+    return created;
+  }
+
+  static updateSubscriptionRequestStatus(id: string, status: 'approved' | 'rejected'): SubscriptionRequest {
+    const myRole = this.getMyRole();
+    if (myRole !== 'superadmin') throw new Error('Unauthorized: Restricted to System Master Admin only');
+    
+    const requests = getStored<SubscriptionRequest[]>(STORAGE_KEYS.SUBSCRIPTION_REQUESTS, []);
+    const index = requests.findIndex(r => r.id === id);
+    if (index === -1) throw new Error('Subscription request not found');
+    
+    requests[index].status = status;
+    setStored(STORAGE_KEYS.SUBSCRIPTION_REQUESTS, requests);
+    return requests[index];
   }
 }

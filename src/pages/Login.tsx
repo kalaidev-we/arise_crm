@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Building, ShieldAlert, KeyRound, Mail } from 'lucide-react';
 
@@ -86,6 +87,13 @@ export const Login: React.FC = () => {
             {loggingIn ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>Looking to use CRM OS for your agency? </span>
+          <Link to="/request-access" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>
+            Request Access Setup
+          </Link>
+        </div>
 
 
       </div>

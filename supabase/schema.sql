@@ -19,6 +19,24 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE IF NOT EXISTS companies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
+  logo_url TEXT,
+  crm_name TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- ============================================================
+-- 1B. SUBSCRIPTION REQUESTS TABLE
+-- ============================================================
+CREATE TABLE IF NOT EXISTS subscription_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_name TEXT NOT NULL,
+  contact_name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  logo_url TEXT,
+  crm_name TEXT,
+  plan TEXT NOT NULL CHECK (plan IN ('starter', 'growth', 'enterprise')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -287,6 +305,19 @@ CREATE POLICY "companies_delete" ON companies
   USING (
     is_current_user_superadmin()
   );
+
+-- ============================================================
+-- RLS POLICIES - SUBSCRIPTION REQUESTS TABLE
+-- ============================================================
+ALTER TABLE subscription_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "subscription_requests_public_insert" ON subscription_requests
+  FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "subscription_requests_superadmin_all" ON subscription_requests
+  FOR ALL
+  USING (is_current_user_superadmin());
 
 -- ============================================================
 -- RLS POLICIES - DEPARTMENTS TABLE

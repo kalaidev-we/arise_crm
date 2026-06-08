@@ -12,6 +12,8 @@ interface AuthContextType {
   isStaff: boolean;
   isSuperAdmin: boolean;
   companyName: string;
+  companyLogoUrl: string;
+  crmName: string;
   changePasswordModalOpen: boolean;
   setChangePasswordModalOpen: (open: boolean) => void;
   updatePassword: (password: string) => Promise<void>;
@@ -23,6 +25,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [companyName, setCompanyName] = useState<string>('');
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string>('');
+  const [crmName, setCrmName] = useState<string>('');
   const [changePasswordModalOpen, setChangePasswordModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -46,8 +50,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const company = await db.companies.get(companyId);
       setCompanyName(company ? company.name : 'Unknown Agency');
+      setCompanyLogoUrl(company?.logo_url || '');
+      setCrmName(company?.crm_name || '');
     } catch {
       setCompanyName('My Agency');
+      setCompanyLogoUrl('');
+      setCrmName('');
     }
   };
 
@@ -68,6 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await db.auth.logout();
       setUser(null);
       setCompanyName('');
+      setCompanyLogoUrl('');
+      setCrmName('');
     } catch (err) {
       console.error('Logout error:', err);
     }
@@ -104,6 +114,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isStaff,
       isSuperAdmin,
       companyName,
+      companyLogoUrl,
+      crmName,
       changePasswordModalOpen,
       setChangePasswordModalOpen,
       updatePassword,
