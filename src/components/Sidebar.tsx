@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ isOpen, onClose }) => {
-  const { user, logout, isAdmin, isSuperAdmin, companyName, companyLogoUrl, crmName, setChangePasswordModalOpen } = useAuth();
+  const { user, logout, isAdmin, isSuperAdmin, companyName, companyLogoUrl, crmName, setChangePasswordModalOpen, permissions, customRoleName } = useAuth();
 
   if (!user) return null;
 
@@ -73,23 +73,27 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ 
               <span>Dashboard</span>
             </NavLink>
 
-            <NavLink 
-              to="/crm" 
-              style={({ isActive }) => navItemStyle(isActive)}
-            >
-              <Target size={18} />
-              <span>CRM Pipeline</span>
-            </NavLink>
+            {permissions.canManageSales && (
+              <NavLink 
+                to="/crm" 
+                style={({ isActive }) => navItemStyle(isActive)}
+              >
+                <Target size={18} />
+                <span>CRM Pipeline</span>
+              </NavLink>
+            )}
 
-            <NavLink 
-              to="/projects" 
-              style={({ isActive }) => navItemStyle(isActive)}
-            >
-              <Briefcase size={18} />
-              <span>Projects</span>
-            </NavLink>
+            {permissions.canManageProjects && (
+              <NavLink 
+                to="/projects" 
+                style={({ isActive }) => navItemStyle(isActive)}
+              >
+                <Briefcase size={18} />
+                <span>Projects</span>
+              </NavLink>
+            )}
 
-            {isAdmin && (
+            {permissions.canViewFinance && (
               <NavLink 
                 to="/finance" 
                 style={({ isActive }) => navItemStyle(isActive)}
@@ -99,7 +103,7 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ 
               </NavLink>
             )}
 
-            {isAdmin && (
+            {permissions.canManageTeam && (
               <NavLink 
                 to="/employees" 
                 style={({ isActive }) => navItemStyle(isActive)}
@@ -109,7 +113,7 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ 
               </NavLink>
             )}
 
-            {isAdmin && (
+            {permissions.canManageTeam && (
               <NavLink 
                 to="/admin" 
                 style={({ isActive }) => navItemStyle(isActive)}
@@ -128,7 +132,7 @@ export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ 
         </div>
         <div style={userInfoStyle}>
           <div style={userNameStyle}>{user.name}</div>
-          <div style={roleBadgeStyle(user.role)}>{user.role.toUpperCase()}</div>
+          <div style={roleBadgeStyle(user.role)}>{customRoleName || user.role.toUpperCase()}</div>
         </div>
         <div style={{ display: 'flex', gap: '0.25rem' }}>
           <button 

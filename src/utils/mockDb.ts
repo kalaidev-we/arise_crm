@@ -34,6 +34,7 @@ export interface User {
   role: 'superadmin' | 'admin' | 'manager' | 'staff';
   is_default_password?: boolean;
   title?: string | null; // Added custom job title
+  custom_role_id?: string | null; // Added custom role linkage
   created_at: string;
 }
 
@@ -164,6 +165,18 @@ export interface EmploymentEvent {
   created_at: string;
 }
 
+export interface CustomRole {
+  id: string;
+  company_id: string;
+  name: string;
+  base_role: 'admin' | 'manager' | 'staff';
+  can_view_finance: boolean;
+  can_manage_sales: boolean;
+  can_manage_projects: boolean;
+  can_manage_team: boolean;
+  created_at: string;
+}
+
 const STORAGE_KEYS = {
   COMPANIES: 'crm_companies',
   DEPARTMENTS: 'crm_departments',
@@ -180,6 +193,7 @@ const STORAGE_KEYS = {
   SUBSCRIPTION_REQUESTS: 'crm_subscription_requests',
   ATTENDANCE: 'crm_attendance',
   EMPLOYMENT_EVENTS: 'crm_employment_events',
+  CUSTOM_ROLES: 'crm_custom_roles',
 };
 
 // Initial Seed Data (Matches 04_seed.sql)
@@ -273,6 +287,7 @@ export class MockDatabase {
     getStored(STORAGE_KEYS.EXPENSES, SEED_DATA.expenses);
     getStored(STORAGE_KEYS.ATTENDANCE, []);
     getStored(STORAGE_KEYS.EMPLOYMENT_EVENTS, []);
+    getStored(STORAGE_KEYS.CUSTOM_ROLES, []);
 
     // Retroactive deal creation for existing qualified leads
     const leads = getStored<Lead[]>(STORAGE_KEYS.LEADS, []);
@@ -418,6 +433,7 @@ export class MockDatabase {
       delete safeUpdates.role;
       delete safeUpdates.company_id;
       delete safeUpdates.department_id;
+      delete safeUpdates.custom_role_id;
     }
 
     const updatedUser = {
@@ -1377,5 +1393,67 @@ export class MockDatabase {
     events.push(created);
     setStored(STORAGE_KEYS.EMPLOYMENT_EVENTS, events);
     return created;
+  }
+
+  // 13. Custom Roles CRUD
+  static getCustomRoles(): CustomRole[] {
+    const myCompanyId = this.getMyCompanyId();
+    const roles = getStored<CustomRole[]>(STORAGE_KEYS.CUSTOM_ROLES, []);
+    return roles.filter(r => r.company_id === myCompanyId);
+  }
+
+  static createCustomRole(role: Omit<CustomRole, 'id' | 'company_id' | 'created_at'>): CustomRole {
+    const myCompanyId = this.getMyCompanyId();
+    const myRole = this.getMyRole();
+    if (myRole !== 'admin' && myRole !== 'superadmin') {
+      throw new Error('Unauthorized: Only Admins can manage custom roles');
+    }
+
+    const roles = getStored<CustomRole[]>(STORAGE_KEYS.CUSTOM_ROLES, []);
+    
+    // Check if role name is unique within company
+    if (roles.some(r => r.company_id === myCompanyId && r.name.toLowerCase() === role.name.toLowerCase())) {
+      throw new Error('A custom role with this name already exists.');
+    }
+
+    const created: CustomRole = {
+      ...role,
+      id: crypto.randomUUID(),
+      company_id: myCompanyId,
+      created_at: new Date().toISOString()
+    };
+
+    roles.push(created);
+    setStored(STORAGE_KEYS.CUSTOM_ROLES, roles);
+    return created;
+  }
+
+  static deleteCustomRole(roleId: string): void {
+    const myCompanyId = this.getMyCompanyId();
+    const myRole = this.getMyRole();
+    if (myRole !== 'admin' && myRole !== 'superadmin') {
+      throw new Error('Unauthorized: Only Admins can manage custom roles');
+    }
+
+    const roles = getStored<CustomRole[]>(STORAGE_KEYS.CUSTOM_ROLES, []);
+    const index = roles.findIndex(r => r.id === roleId && r.company_id === myCompanyId);
+    if (index === -1) throw new Error('Custom role not found');
+
+    const filtered = roles.filter(r => !(r.id === roleId && r.company_id === myCompanyId));
+    setStored(STORAGE_KEYS.CUSTOM_ROLES, filtered);
+
+    // Also null out custom_role_id on users belonging to this role
+    const users = getStored<User[]>(STORAGE_KEYS.USERS, []);
+    let updated = false;
+    const updatedUsers = users.map(u => {
+      if (u.custom_role_id === roleId) {
+        updated = true;
+        return { ...u, custom_role_id: null };
+      }
+      return u;
+    });
+    if (updated) {
+      setStored(STORAGE_KEYS.USERS, updatedUsers);
+    }
   }
 }

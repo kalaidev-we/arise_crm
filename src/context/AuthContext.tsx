@@ -2,6 +2,13 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../utils/db';
 import { User } from '../utils/mockDb';
 
+export interface UserPermissions {
+  canViewFinance: boolean;
+  canManageSales: boolean;
+  canManageProjects: boolean;
+  canManageTeam: boolean;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -17,6 +24,8 @@ interface AuthContextType {
   changePasswordModalOpen: boolean;
   setChangePasswordModalOpen: (open: boolean) => void;
   updatePassword: (password: string) => Promise<void>;
+  permissions: UserPermissions;
+  customRoleName: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +37,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string>('');
   const [crmName, setCrmName] = useState<string>('');
   const [changePasswordModalOpen, setChangePasswordModalOpen] = useState<boolean>(false);
+  const [permissions, setPermissions] = useState<UserPermissions>({
+    canViewFinance: false,
+    canManageSales: false,
+    canManageProjects: false,
+    canManageTeam: false
+  });
+  const [customRoleName, setCustomRoleName] = useState<string>('');
+
+  const getDefaultPermissions = (role: 'superadmin' | 'admin' | 'manager' | 'staff'): UserPermissions => {
+    if (role === 'superadmin' || role === 'admin') {
+      return {
+        canViewFinance: true,
+        canManageSales: true,
+        canManageProjects: true,
+        canManageTeam: true
+      };
+    }
+    if (role === 'manager') {
+      return {
+        canViewFinance: false,
+        canManageSales: true,
+        canManageProjects: true,
+        canManageTeam: false
+      };
+    }
+    return {
+      canViewFinance: false,
+      canManageSales: false,
+      canManageProjects: true,
+      canManageTeam: false
+    };
+  };
+
+  useEffect(() => {
+    async function resolvePermissionsAndRole() {
+      if (user) {
+        if (user.custom_role_id) {
+          try {
+            const roles = await db.customRoles.list();
+            const role = roles.find(r => r.id === user.custom_role_id);
+            if (role) {
+              setPermissions({
+                canViewFinance: role.can_view_finance,
+                canManageSales: role.can_manage_sales,
+                canManageProjects: role.can_manage_projects,
+                canManageTeam: role.can_manage_team
+              });
+              setCustomRoleName(role.name);
+              return;
+            }
+          } catch (err) {
+            console.error('Error loading custom role permissions:', err);
+          }
+        }
+        setPermissions(getDefaultPermissions(user.role));
+        setCustomRoleName('');
+      } else {
+        setPermissions({
+          canViewFinance: false,
+          canManageSales: false,
+          canManageProjects: false,
+          canManageTeam: false
+        });
+        setCustomRoleName('');
+      }
+    }
+    resolvePermissionsAndRole();
+  }, [user]);
 
   useEffect(() => {
     async function checkAuth() {
@@ -126,6 +203,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       changePasswordModalOpen,
       setChangePasswordModalOpen,
       updatePassword,
+      permissions,
+      customRoleName,
     }}>
       {children}
     </AuthContext.Provider>

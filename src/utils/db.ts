@@ -3,7 +3,7 @@
 // Database client interface switcher (Supabase <-> Local Mock)
 import { createClient } from '@supabase/supabase-js';
 import { 
-  MockDatabase, User, Lead, Deal, Client, Project, Milestone, Task, Invoice, Expense, Department, Company, hashPassword, SubscriptionRequest, Attendance, EmploymentEvent
+  MockDatabase, User, Lead, Deal, Client, Project, Milestone, Task, Invoice, Expense, Department, Company, hashPassword, SubscriptionRequest, Attendance, EmploymentEvent, CustomRole
 } from './mockDb';
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || 'https://kciodmfxrnixzfdgcewf.supabase.co').trim();
@@ -948,6 +948,53 @@ export const db = {
         .single();
       if (error) throw error;
       return data;
+    }
+  },
+
+  customRoles: {
+    async list(): Promise<CustomRole[]> {
+      await delay(200);
+      if (isMock) return MockDatabase.getCustomRoles();
+
+      const { data, error } = await getScopedQuery('custom_roles');
+      if (error) throw error;
+      return data || [];
+    },
+
+    async create(role: Omit<CustomRole, 'id' | 'company_id' | 'created_at'>): Promise<CustomRole> {
+      await delay(200);
+      if (isMock) return MockDatabase.createCustomRole(role);
+
+      const currentUser = await db.auth.getCurrentUser();
+      if (!currentUser) throw new Error('Unauthenticated');
+
+      let companyId = currentUser.company_id;
+      if (currentUser.role === 'superadmin') {
+        const impersonatedId = localStorage.getItem('crm_impersonated_company_id');
+        if (impersonatedId) companyId = impersonatedId;
+      }
+
+      const { data, error } = await supabase!
+        .from('custom_roles')
+        .insert([{ ...role, company_id: companyId }])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+
+    async delete(id: string): Promise<void> {
+      await delay(200);
+      if (isMock) {
+        MockDatabase.deleteCustomRole(id);
+        return;
+      }
+
+      const { error } = await supabase!
+        .from('custom_roles')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
     }
   }
 };
