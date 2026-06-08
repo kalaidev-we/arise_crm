@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { db } from '../utils/db';
 import { User } from '../utils/mockDb';
 
@@ -106,6 +106,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resolvePermissionsAndRole();
   }, [user]);
 
+  const fetchCompanyName = useCallback(async (companyId: string) => {
+    try {
+      const company = await db.companies.get(companyId);
+      setCompanyName(company ? company.name : 'Unknown Agency');
+      setCompanyLogoUrl(company?.logo_url || '');
+      setCrmName(company?.crm_name || '');
+    } catch {
+      setCompanyName('My Agency');
+      setCompanyLogoUrl('');
+      setCrmName('');
+    }
+  }, []);
+
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -128,20 +141,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     checkAuth();
-  }, []);
+  }, [fetchCompanyName]);
 
-  const fetchCompanyName = async (companyId: string) => {
-    try {
-      const company = await db.companies.get(companyId);
-      setCompanyName(company ? company.name : 'Unknown Agency');
-      setCompanyLogoUrl(company?.logo_url || '');
-      setCrmName(company?.crm_name || '');
-    } catch {
-      setCompanyName('My Agency');
-      setCompanyLogoUrl('');
-      setCrmName('');
-    }
-  };
+
 
   const login = async (email: string, password: string): Promise<User> => {
     try {

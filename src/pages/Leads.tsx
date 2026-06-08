@@ -444,11 +444,7 @@ const ownerTagStyle: React.CSSProperties = {
   color: 'var(--text-secondary)',
 };
 
-const formRowGrid: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '1rem',
-};
+
 
 const modalErrorBanner: React.CSSProperties = {
   background: 'var(--danger-bg)',

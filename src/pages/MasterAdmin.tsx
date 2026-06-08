@@ -885,12 +885,7 @@ const kpiSubtextStyle: React.CSSProperties = {
   marginTop: '0.25rem',
 };
 
-const layoutGrid: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: '380px 1fr',
-  gap: '1.5rem',
-  alignItems: 'flex-start'
-};
+
 
 const sectionHeader: React.CSSProperties = {
   display: 'flex',

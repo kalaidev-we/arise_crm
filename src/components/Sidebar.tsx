@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ isOpen, onClose }) => {
-  const { user, logout, isAdmin, isSuperAdmin, companyName, companyLogoUrl, crmName, setChangePasswordModalOpen, permissions, customRoleName } = useAuth();
+  const { user, logout, isSuperAdmin, companyName, companyLogoUrl, crmName, setChangePasswordModalOpen, permissions, customRoleName } = useAuth();
 
   if (!user) return null;
 

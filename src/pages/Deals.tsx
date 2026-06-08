@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../utils/db';
 import { Deal, Lead, Client, Project } from '../utils/mockDb';
-import { Plus, ChevronLeft, ChevronRight, DollarSign, Target, Briefcase, Calendar, Edit2, Trash2 } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, DollarSign, Target, Calendar, Edit2, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 

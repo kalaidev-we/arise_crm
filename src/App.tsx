@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
-import { Menu } from 'lucide-react';
 import { Header } from './components/Header';
 import { Login } from './pages/Login';
 import { RequestAccess } from './pages/RequestAccess';

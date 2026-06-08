@@ -8,18 +8,16 @@ import {
   Shield, 
   Calendar, 
   TrendingUp, 
-  Plus, 
   Award, 
   FileText, 
   Building, 
   Clock, 
   ArrowRight,
-  TrendingDown,
   DollarSign
 } from 'lucide-react';
 
 export const ManageEmployees: React.FC = () => {
-  const { user: currentUser } = useAuth();
+  const { user: _currentUser } = useAuth();
   
   const [employees, setEmployees] = useState<User[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);

@@ -513,41 +513,9 @@ const gridStyle: React.CSSProperties = {
   gap: '1.25rem',
 };
 
-const logoPreviewSectionStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.5rem',
-};
 
-const logoPreviewBoxStyle: React.CSSProperties = {
-  height: '112px',
-  background: 'rgba(255, 255, 255, 0.02)',
-  border: '1px dashed var(--border-color)',
-  borderRadius: 'var(--radius-sm)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  position: 'relative',
-  overflow: 'hidden'
-};
 
-const previewImageStyle: React.CSSProperties = {
-  maxWidth: '90%',
-  maxHeight: '90%',
-  objectFit: 'contain',
-  zIndex: 2,
-};
 
-const logoPlaceholderStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: 0, left: 0, right: 0, bottom: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '0.35rem',
-  zIndex: 1
-};
 
 const inputWrapperStyle: React.CSSProperties = {
   position: 'relative',

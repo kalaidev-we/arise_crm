@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { db } from '../utils/db';
 import { User, Department } from '../utils/mockDb';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Users, Shield, KeyRound, Check, HelpCircle, Mail, Trash2, Building } from 'lucide-react';
+import { Users, Shield, KeyRound, Mail, Trash2, Building } from 'lucide-react';
 
 export const CompanyAdmin: React.FC = () => {
   const { user } = useAuth();
@@ -685,11 +685,7 @@ const inputIcon: React.CSSProperties = {
   color: 'var(--text-muted)',
 };
 
-const inputHelpText: React.CSSProperties = {
-  fontSize: '0.7rem',
-  color: 'var(--text-muted)',
-  marginTop: '0.15rem',
-};
+
 
 const directoryHeader: React.CSSProperties = {
   display: 'flex',
@@ -730,35 +726,7 @@ const deptTag: React.CSSProperties = {
   color: 'var(--text-secondary)',
 };
 
-const pwdInputStyle: React.CSSProperties = {
-  padding: '0.25rem 0.5rem',
-  fontSize: '0.8rem',
-  width: '120px',
-  background: 'var(--bg-card)',
-  border: '1px solid var(--border-color)',
-  color: 'var(--text-primary)',
-};
 
-const pwdSpanStyle: React.CSSProperties = {
-  fontFamily: 'monospace',
-  fontSize: '0.85rem',
-  color: 'var(--text-secondary)',
-};
-
-const btnGroupStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: '0.25rem',
-  justifyContent: 'flex-end',
-};
-
-const actionBtnStyle: React.CSSProperties = {
-  padding: '0.3rem',
-  width: '24px',
-  height: '24px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
 
 const roleBadgeStyle = (role: string): React.CSSProperties => {
   let color = 'var(--text-secondary)';

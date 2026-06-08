@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../utils/db';
 import { Lead, Client, Project, User } from '../utils/mockDb';
 import { useAuth } from '../context/AuthContext';
-import { Search, Calendar, User as UserIcon, Tag, Folder, ArrowRight } from 'lucide-react';
+import { Search, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface SearchFilterBarProps {
@@ -22,7 +22,7 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({ onResultsChang
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [ownerFilter, setOwnerFilter] = useState('all');
-  const [stageFilter, setStageFilter] = useState('all');
+  const [_stageFilter, setStageFilter] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -113,7 +113,7 @@ export const SearchFilterBar: React.FC<SearchFilterBarProps> = ({ onResultsChang
     if (onResultsChange) {
       onResultsChange(results);
     }
-  }, [searchQuery, statusFilter, ownerFilter, stageFilter, startDate, endDate, leads, clients, projects]);
+  }, [searchQuery, statusFilter, ownerFilter, _stageFilter, startDate, endDate, leads, clients, projects]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>

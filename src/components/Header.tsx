@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { isMock } from '../utils/db';
-import { Database, Wifi, ShieldAlert } from 'lucide-react';
+import { Wifi, ShieldAlert } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
@@ -41,15 +41,6 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
   );
 };
 
-// --- HEADER INLINE STYLES ---
-const headerStyle: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: '2rem',
-  paddingBottom: '1rem',
-  borderBottom: '1px solid var(--border-color)',
-};
 
 const titleStyle: React.CSSProperties = {
   fontSize: '1.75rem',

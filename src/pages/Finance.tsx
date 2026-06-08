@@ -4,10 +4,8 @@ import { Invoice, Expense, Project, Client } from '../utils/mockDb';
 import { 
   DollarSign, 
   Plus, 
-  TrendingUp, 
   ArrowUpRight, 
   ArrowDownRight, 
-  Percent, 
   FileText, 
   Receipt,
   Trash2
@@ -590,11 +588,7 @@ const kpiSubtextStyle: React.CSSProperties = {
   marginTop: '0.25rem',
 };
 
-const ledgerGridStyle: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '1.5rem',
-};
+
 
 const ledgerHeaderStyle: React.CSSProperties = {
   display: 'flex',
@@ -632,11 +626,7 @@ const invStatusBadgeStyle = (status: string): React.CSSProperties => {
   };
 };
 
-const formRowGrid: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '1rem',
-};
+
 
 const modalErrorBanner: React.CSSProperties = {
   background: 'var(--danger-bg)',
