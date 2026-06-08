@@ -26,6 +26,24 @@ export const supabase = !isMock
 const delay = (ms = 400) => new Promise(res => setTimeout(res, ms));
 
 export const db = {
+  companies: {
+    async get(id: string): Promise<Company | null> {
+      await delay(100);
+      if (isMock) {
+        const companies = JSON.parse(localStorage.getItem('crm_companies') || '[]');
+        const match = companies.find((c: any) => c.id === id);
+        return match || null;
+      }
+      const { data, error } = await supabase!
+        .from('companies')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data;
+    }
+  },
+
   auth: {
     async getCurrentUser(): Promise<User | null> {
       await delay(100);
@@ -111,28 +129,53 @@ export const db = {
       await delay(400);
       if (isMock) return MockDatabase.insertUser(user);
 
-      // Real Supabase Auth: Admins create users.
-      // Note: For real Supabase, admins usually call an edge function or auth.signUp().
-      // Here we write directly to public.users (which matches Auth user id).
-      const { data, error } = await supabase!
-        .from('users')
-        .insert([user])
-        .select()
-        .single();
+      // Call the Supabase stored procedure to create both auth and public user
+      const { data, error } = await supabase!.rpc('create_tenant_user', {
+        p_company_id: user.company_id,
+        p_name: user.name,
+        p_email: user.email,
+        p_password: user.password || '',
+        p_role: user.role,
+        p_department_id: user.department_id,
+        p_manager_id: user.manager_id || null
+      });
       
       if (error) throw error;
-      return data;
+      return data[0]; // RPC returns array, get first element
     },
 
     async update(id: string, updates: Partial<User>): Promise<User> {
       await delay(300);
       if (isMock) return MockDatabase.updateUser(id, updates);
 
+      const { password, ...otherUpdates } = updates;
+
+      if (password) {
+        // Call the RPC to update password in auth.users
+        const { error: pwdError } = await supabase!.rpc('update_user_password', {
+          p_user_id: id,
+          p_password: password
+        });
+        if (pwdError) throw pwdError;
+      }
+
+      if (Object.keys(otherUpdates).length > 0) {
+        const { data, error } = await supabase!
+          .from('users')
+          .update(otherUpdates)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return data;
+      }
+
+      // If only password was updated, fetch and return the profile
       const { data, error } = await supabase!
         .from('users')
-        .update(updates)
+        .select('*')
         .eq('id', id)
-        .select()
         .single();
       
       if (error) throw error;
@@ -510,13 +553,16 @@ export const db = {
     async createTenantAdmin(companyId: string, name: string, email: string, pass: string): Promise<User> {
       await delay(350);
       if (isMock) return MockDatabase.superadminCreateTenantAdmin(companyId, name, email, pass);
-      const { data, error } = await supabase!
-        .from('users')
-        .insert([{ company_id: companyId, name, email, role: 'admin' }])
-        .select()
-        .single();
+      
+      const { data, error } = await supabase!.rpc('create_tenant_admin_user', {
+        p_company_id: companyId,
+        p_name: name,
+        p_email: email,
+        p_password: pass
+      });
+      
       if (error) throw error;
-      return data;
+      return data[0]; // RPC returns array, get first element
     },
 
     async deleteTenantAdmin(id: string): Promise<void> {
@@ -535,10 +581,10 @@ export const db = {
         MockDatabase.superadminUpdateTenantAdminPassword(id, pass);
         return;
       }
-      const { error } = await supabase!
-        .from('users')
-        .update({ password: hashPassword(pass) })
-        .eq('id', id);
+      const { error } = await supabase!.rpc('update_user_password', {
+        p_user_id: id,
+        p_password: pass
+      });
       if (error) throw error;
     }
   },

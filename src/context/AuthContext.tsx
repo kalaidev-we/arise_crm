@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const currentUser = await db.auth.getCurrentUser();
         setUser(currentUser);
         if (currentUser) {
-          fetchCompanyName(currentUser.company_id);
+          await fetchCompanyName(currentUser.company_id);
         }
       } catch (err) {
         console.error('Auth check error:', err);
@@ -42,12 +42,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
-  const fetchCompanyName = (companyId: string) => {
-    // Basic lookup helper
+  const fetchCompanyName = async (companyId: string) => {
     try {
-      const companies = JSON.parse(localStorage.getItem('crm_companies') || '[]');
-      const match = companies.find((c: any) => c.id === companyId);
-      setCompanyName(match ? match.name : 'Unknown Agency');
+      const company = await db.companies.get(companyId);
+      setCompanyName(company ? company.name : 'Unknown Agency');
     } catch {
       setCompanyName('My Agency');
     }
@@ -58,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const loggedInUser = await db.auth.login(email, password);
       setUser(loggedInUser);
-      fetchCompanyName(loggedInUser.company_id);
+      await fetchCompanyName(loggedInUser.company_id);
       return loggedInUser;
     } catch (err) {
       setLoading(false);
