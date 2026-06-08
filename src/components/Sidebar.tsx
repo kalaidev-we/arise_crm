@@ -13,13 +13,15 @@ import {
   KeyRound
 } from 'lucide-react';
 
-export const Sidebar: React.FC = () => {
+export const Sidebar: React.FC<{ isOpen?: boolean; onClose?: () => void }> = ({ isOpen, onClose }) => {
   const { user, logout, isAdmin, isSuperAdmin, companyName, setChangePasswordModalOpen } = useAuth();
 
   if (!user) return null;
 
   return (
-    <aside style={sidebarStyle}>
+    <>
+      {isOpen && <div className="mobile-overlay" onClick={onClose} style={overlayStyle} />}
+      <aside style={sidebarStyle} className={`sidebar-container ${isOpen ? 'open' : ''}`}>
       <div style={logoContainerStyle}>
         <Building size={24} style={{ color: 'var(--primary)' }} />
         <div style={logoTextStyle}>
@@ -118,10 +120,19 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
     </aside>
+    </>
   );
 };
 
 // --- INLINE STYLES FOR PREMIUM SIDEBAR Layout ---
+const overlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 0, left: 0, right: 0, bottom: 0,
+  background: 'rgba(15, 23, 42, 0.5)',
+  backdropFilter: 'blur(4px)',
+  zIndex: 90,
+};
+
 const sidebarStyle: React.CSSProperties = {
   width: '280px',
   background: 'var(--bg-sidebar)',

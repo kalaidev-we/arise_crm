@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
+import { Menu } from 'lucide-react';
 import { Header } from './components/Header';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -79,6 +80,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const App: React.FC = () => {
   const { user, loading, setChangePasswordModalOpen } = useAuth();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (loading) {
     return (
@@ -106,9 +108,16 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
-      {user && <Sidebar />}
+      {user && <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />}
       
       <main className="main-content" style={user ? {} : { marginLeft: 0, padding: 0 }}>
+        {user && (
+          <div className="mobile-header-toggle" style={{ display: 'none' }}>
+            <button onClick={() => setIsMobileMenuOpen(true)} className="btn btn-ghost" style={{ padding: '0.5rem 0' }}>
+              <Menu size={24} />
+            </button>
+          </div>
+        )}
         {user && <Header title={getHeaderTitle()} />}
         
         {user?.is_default_password && (

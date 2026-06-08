@@ -508,3 +508,36 @@ h1, h2, h3, h4, h5, h6 {
   gap: 1rem;
   color: var(--text-secondary);
 }
+
+/* --- MOBILE RESPONSIVENESS --- */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0 !important;
+    padding: 1rem;
+    margin-top: 60px; /* Space for mobile header */
+  }
+  .pipeline-column {
+    flex: 0 0 280px;
+  }
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .sidebar-container {
+    transform: translateX(-100%);
+    transition: transform var(--transition-normal);
+  }
+  .sidebar-container.open {
+    transform: translateX(0);
+  }
+  .mobile-overlay {
+    display: block !important;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .mobile-header-toggle {
+    display: block !important;
+  }
+}
+

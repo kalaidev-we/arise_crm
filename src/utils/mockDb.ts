@@ -95,6 +95,8 @@ export interface Task {
   title: string;
   description: string;
   assigned_to: string | null;
+  assigned_role?: string;
+  report_text?: string;
   created_by: string;
   status: 'todo' | 'in-progress' | 'done';
   due_date: string;

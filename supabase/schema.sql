@@ -137,6 +137,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   title TEXT NOT NULL,
   description TEXT,
   assigned_to UUID REFERENCES users(id),
+  assigned_role TEXT CHECK (assigned_role IN ('admin', 'manager', 'staff')),
+  report_text TEXT,
   created_by UUID NOT NULL REFERENCES users(id),
   status TEXT NOT NULL DEFAULT 'todo' CHECK (status IN ('todo', 'in-progress', 'done')),
   due_date DATE,

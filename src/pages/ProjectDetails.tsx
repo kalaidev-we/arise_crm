@@ -32,9 +32,11 @@ export const ProjectDetails: React.FC = () => {
     title: '',
     description: '',
     assigned_to: '',
+    assigned_role: '',
     due_date: '',
     status: 'todo' as Task['status'],
   });
+  const [reportTexts, setReportTexts] = useState<Record<string, string>>({});
   const [savingTask, setSavingTask] = useState(false);
   const [taskError, setTaskError] = useState<string | null>(null);
 
@@ -75,6 +77,7 @@ export const ProjectDetails: React.FC = () => {
       title: '',
       description: '',
       assigned_to: '',
+      assigned_role: '',
       due_date: '',
       status: 'todo',
     });
@@ -92,6 +95,7 @@ export const ProjectDetails: React.FC = () => {
         title: taskForm.title,
         description: taskForm.description,
         assigned_to: taskForm.assigned_to || null,
+        assigned_role: taskForm.assigned_role || undefined,
         due_date: taskForm.due_date,
         status: taskForm.status,
       });
@@ -101,6 +105,18 @@ export const ProjectDetails: React.FC = () => {
       setTaskError(err.message || 'Failed to create task');
     } finally {
       setSavingTask(false);
+    }
+  };
+
+  const handleTaskReportSubmit = async (taskId: string) => {
+    const text = reportTexts[taskId];
+    if (text === undefined) return;
+    try {
+      await db.tasks.update(taskId, { report_text: text });
+      alert('Report submitted successfully!');
+      await fetchProjectData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to submit report');
     }
   };
 
@@ -258,16 +274,47 @@ export const ProjectDetails: React.FC = () => {
                             )}
 
                             <div style={taskMetaRowStyle}>
-                              <span style={taskMetaLabelStyle}>
-                                <UserIcon size={12} />
-                                {getAssigneeName(task.assigned_to)}
-                              </span>
+                              {task.assigned_role ? (
+                                <span style={taskMetaLabelStyle}>
+                                  <UserIcon size={12} />
+                                  Role: {task.assigned_role.toUpperCase()}
+                                </span>
+                              ) : (
+                                <span style={taskMetaLabelStyle}>
+                                  <UserIcon size={12} />
+                                  {getAssigneeName(task.assigned_to)}
+                                </span>
+                              )}
                               {task.due_date && (
                                 <span style={taskMetaLabelStyle}>
                                   Due {new Date(task.due_date).toLocaleDateString()}
                                 </span>
                               )}
                             </div>
+
+                            {/* Report Section */}
+                            {(task.assigned_to === user?.id || task.assigned_role === user?.role) && (
+                              <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <textarea
+                                  className="form-textarea"
+                                  placeholder="Type your task report here..."
+                                  value={reportTexts[task.id] !== undefined ? reportTexts[task.id] : (task.report_text || '')}
+                                  onChange={(e) => setReportTexts({ ...reportTexts, [task.id]: e.target.value })}
+                                  style={{ fontSize: '0.8rem', padding: '0.5rem', minHeight: '60px' }}
+                                />
+                                <div style={{ alignSelf: 'flex-start' }}>
+                                  <button type="button" className="btn btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }} onClick={() => handleTaskReportSubmit(task.id)}>
+                                    Submit Report
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            {(!isAssignedToMe && task.assigned_role !== user?.role && task.report_text) && (
+                              <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'rgba(0,0,0,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
+                                <strong style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Report Submitted:</strong>
+                                <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>{task.report_text}</p>
+                              </div>
+                            )}
                           </div>
 
                           <div style={taskActionsContainerStyle}>
@@ -346,20 +393,35 @@ export const ProjectDetails: React.FC = () => {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Assign To</label>
-                  <select
-                    className="form-select"
-                    value={taskForm.assigned_to}
-                    onChange={(e) => setTaskForm({ ...taskForm, assigned_to: e.target.value })}
-                  >
-                    <option value="">-- Choose team member --</option>
-                    {team.map(member => (
-                      <option key={member.id} value={member.id}>
-                        {member.name} ({member.role.toUpperCase()})
-                      </option>
-                    ))}
-                  </select>
+                <div style={formRowGrid}>
+                  <div className="form-group">
+                    <label className="form-label">Assign To User</label>
+                    <select
+                      className="form-select"
+                      value={taskForm.assigned_to}
+                      onChange={(e) => setTaskForm({ ...taskForm, assigned_to: e.target.value, assigned_role: '' })}
+                    >
+                      <option value="">-- Choose team member --</option>
+                      {team.map(member => (
+                        <option key={member.id} value={member.id}>
+                          {member.name} ({member.role.toUpperCase()})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">OR Assign To Role</label>
+                    <select
+                      className="form-select"
+                      value={taskForm.assigned_role}
+                      onChange={(e) => setTaskForm({ ...taskForm, assigned_role: e.target.value, assigned_to: '' })}
+                    >
+                      <option value="">-- Choose Role --</option>
+                      <option value="admin">Admin</option>
+                      <option value="manager">Manager</option>
+                      <option value="staff">Staff</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div style={formRowGrid}>
