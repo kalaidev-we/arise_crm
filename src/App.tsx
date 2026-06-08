@@ -84,7 +84,7 @@ const App: React.FC = () => {
     return (
       <div className="loading-container">
         <div className="spinner"></div>
-        <span>Initializing Antigravity CRM...</span>
+        <span>Initializing AriseAgency CRM...</span>
       </div>
     );
   }

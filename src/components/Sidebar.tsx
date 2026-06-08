@@ -23,8 +23,8 @@ export const Sidebar: React.FC = () => {
       <div style={logoContainerStyle}>
         <Building size={24} style={{ color: 'var(--primary)' }} />
         <div style={logoTextStyle}>
-          <span style={logoMainStyle}>Antigravity</span>
-          <span style={logoSubStyle}>CRM OS</span>
+          <span style={logoMainStyle}>AriseAgency</span>
+          <span style={logoSubStyle}>CRM </span>
         </div>
       </div>
 
