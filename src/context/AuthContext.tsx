@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = user?.role === 'admin';
-  const isManager = user?.role === 'manager';
+  const isManager = user?.role === 'manager' || user?.role === 'admin';
   const isStaff = user?.role === 'staff';
   const isSuperAdmin = user?.role === 'superadmin';
 

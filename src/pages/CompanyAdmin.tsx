@@ -113,7 +113,7 @@ export const CompanyAdmin: React.FC = () => {
     return dept ? dept.name : 'Unknown Department';
   };
 
-  const managersList = usersList.filter(u => u.role === 'manager');
+  const managersList = usersList.filter(u => u.role === 'manager' || u.role === 'admin');
 
   return (
     <div className="anim-fade" style={containerStyle}>

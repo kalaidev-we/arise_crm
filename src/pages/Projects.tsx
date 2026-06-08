@@ -77,7 +77,7 @@ export const Projects: React.FC = () => {
   // Summary Metrics
   const pendingProjects = projects.filter(p => p.status === 'pending_approval');
   const approvedProjects = projects.filter(p => p.status !== 'pending_approval');
-  const managers = users.filter(u => u.role === 'manager');
+  const managers = users.filter(u => u.role === 'manager' || u.role === 'admin');
 
   const totalCount = approvedProjects.length;
   const activeCount = approvedProjects.filter(p => p.status === 'active').length;
