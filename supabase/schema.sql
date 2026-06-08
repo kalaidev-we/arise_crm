@@ -197,23 +197,40 @@ ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 
 CREATE OR REPLACE FUNCTION get_current_user_id() 
 RETURNS UUID AS $$
-  SELECT auth.uid();
-$$ LANGUAGE SQL SECURITY DEFINER STABLE;
+BEGIN
+  RETURN auth.uid();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE OR REPLACE FUNCTION get_current_user_role() 
 RETURNS TEXT AS $$
-  SELECT role FROM users WHERE id = auth.uid() LIMIT 1;
-$$ LANGUAGE SQL SECURITY DEFINER STABLE;
+DECLARE
+  v_role TEXT;
+BEGIN
+  SELECT role INTO v_role FROM users WHERE id = auth.uid() LIMIT 1;
+  RETURN v_role;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE OR REPLACE FUNCTION get_current_user_company_id() 
 RETURNS UUID AS $$
-  SELECT company_id FROM users WHERE id = auth.uid() LIMIT 1;
-$$ LANGUAGE SQL SECURITY DEFINER STABLE;
+DECLARE
+  v_company_id UUID;
+BEGIN
+  SELECT company_id INTO v_company_id FROM users WHERE id = auth.uid() LIMIT 1;
+  RETURN v_company_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE OR REPLACE FUNCTION is_current_user_superadmin() 
 RETURNS BOOLEAN AS $$
-  SELECT role = 'superadmin' FROM users WHERE id = auth.uid();
-$$ LANGUAGE SQL SECURITY DEFINER STABLE;
+DECLARE
+  v_role TEXT;
+BEGIN
+  SELECT role INTO v_role FROM users WHERE id = auth.uid() LIMIT 1;
+  RETURN v_role = 'superadmin';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- ============================================================
 -- RLS POLICIES - USERS TABLE
