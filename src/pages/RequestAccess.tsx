@@ -26,6 +26,81 @@ export const RequestAccess: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+
+  const compressAndSetLogo = (file: File, callback: (base64: string) => void) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 120;
+        const MAX_HEIGHT = 120;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/png');
+          callback(dataUrl);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      compressAndSetLogo(e.dataTransfer.files[0], (base64) => {
+        setFormData(prev => ({ ...prev, logo_url: base64 }));
+      });
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      compressAndSetLogo(e.target.files[0], (base64) => {
+        setFormData(prev => ({ ...prev, logo_url: base64 }));
+      });
+    }
+  };
+
+  const triggerFileSelect = () => {
+    document.getElementById('logo-upload-input')?.click();
+  };
 
   const plans = [
     {
@@ -167,41 +242,53 @@ export const RequestAccess: React.FC = () => {
                   />
                 </div>
               </div>
-
-              <div className="form-group">
-                <label className="form-label">Company Logo URL</label>
-                <div style={inputWrapperStyle}>
-                  <ImageIcon size={16} style={inputIconStyle} />
-                  <input
-                    type="url"
-                    className="form-input"
-                    style={{ paddingLeft: '2.5rem' }}
-                    placeholder="https://example.com/logo.png"
-                    value={formData.logo_url}
-                    onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                  />
-                </div>
-              </div>
             </div>
 
-            {/* Right Col - Logo Preview & Contact details */}
-            <div style={logoPreviewSectionStyle}>
-              <span className="form-label">Logo Preview</span>
-              <div style={logoPreviewBoxStyle}>
-                {formData.logo_url.trim() ? (
-                  <img
-                    src={formData.logo_url}
-                    alt="Uploaded Logo"
-                    style={previewImageStyle}
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                ) : null}
-                <div style={logoPlaceholderStyle}>
-                  <Building size={28} style={{ color: 'var(--text-muted)' }} />
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No Logo</span>
-                </div>
+            {/* Right Col - Company Logo Dropzone */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <span className="form-label">Company Logo</span>
+              <div 
+                style={dropZoneStyle(dragActive)}
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
+                onClick={triggerFileSelect}
+              >
+                <input 
+                  type="file" 
+                  id="logo-upload-input" 
+                  style={{ display: 'none' }} 
+                  accept="image/*" 
+                  onChange={handleFileSelect}
+                />
+                {formData.logo_url ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%' }} onClick={(e) => e.stopPropagation()}>
+                    <img 
+                      src={formData.logo_url} 
+                      alt="Logo Preview" 
+                      style={{ maxWidth: '80px', maxHeight: '80px', objectFit: 'contain', borderRadius: '4px' }}
+                    />
+                    <button 
+                      type="button" 
+                      className="btn btn-ghost" 
+                      style={{ fontSize: '0.75rem', color: '#f87171', padding: '0.2rem 0.5rem' }}
+                      onClick={() => setFormData({ ...formData, logo_url: '' })}
+                    >
+                      Remove Logo
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', textAlign: 'center' }}>
+                    <ImageIcon size={24} style={{ color: 'var(--text-muted)' }} />
+                    <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                      {dragActive ? 'Drop file here' : 'Upload logo image'}
+                    </span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      Drag & drop or click to browse
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -295,6 +382,20 @@ export const RequestAccess: React.FC = () => {
 };
 
 // --- STYLES ---
+const dropZoneStyle = (active: boolean): React.CSSProperties => ({
+  height: '144px',
+  background: active ? 'rgba(59, 130, 246, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+  border: active ? '1px dashed var(--primary)' : '1px dashed var(--border-color)',
+  borderRadius: 'var(--radius-sm)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '1.25rem',
+  cursor: 'pointer',
+  transition: 'all var(--transition-fast)',
+  position: 'relative'
+});
+
 const containerStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'center',

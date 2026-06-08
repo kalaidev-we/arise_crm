@@ -21,6 +21,81 @@ export const MasterAdmin: React.FC = () => {
   const [requests, setRequests] = useState<SubscriptionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'tenants' | 'admins' | 'requests'>('tenants');
+  const [dragActiveAdmin, setDragActiveAdmin] = useState(false);
+
+  const compressAndSetLogoAdmin = (file: File, callback: (base64: string) => void) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 120;
+        const MAX_HEIGHT = 120;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/png');
+          callback(dataUrl);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDragAdmin = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActiveAdmin(true);
+    } else if (e.type === "dragleave") {
+      setDragActiveAdmin(false);
+    }
+  };
+
+  const handleDropAdmin = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActiveAdmin(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      compressAndSetLogoAdmin(e.dataTransfer.files[0], (base64) => {
+        setCompanyForm(prev => ({ ...prev, logo_url: base64 }));
+      });
+    }
+  };
+
+  const handleFileSelectAdmin = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      compressAndSetLogoAdmin(e.target.files[0], (base64) => {
+        setCompanyForm(prev => ({ ...prev, logo_url: base64 }));
+      });
+    }
+  };
+
+  const triggerFileSelectAdmin = () => {
+    document.getElementById('logo-upload-input-admin')?.click();
+  };
 
   // Form states
   const [companyForm, setCompanyForm] = useState({ name: '', logo_url: '', crm_name: '' });
@@ -316,17 +391,49 @@ export const MasterAdmin: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Company Logo URL (Optional)</label>
-                <div style={inputContainer}>
-                  <ImageIcon size={14} style={inputIcon} />
-                  <input
-                    type="url"
-                    className="form-input"
-                    style={{ paddingLeft: '2.25rem' }}
-                    placeholder="https://example.com/logo.png"
-                    value={companyForm.logo_url}
-                    onChange={(e) => setCompanyForm({ ...companyForm, logo_url: e.target.value })}
+                <label className="form-label">Company Logo</label>
+                <div 
+                  style={dropZoneStyleAdmin(dragActiveAdmin)}
+                  onDragEnter={handleDragAdmin}
+                  onDragOver={handleDragAdmin}
+                  onDragLeave={handleDragAdmin}
+                  onDrop={handleDropAdmin}
+                  onClick={triggerFileSelectAdmin}
+                >
+                  <input 
+                    type="file" 
+                    id="logo-upload-input-admin" 
+                    style={{ display: 'none' }} 
+                    accept="image/*" 
+                    onChange={handleFileSelectAdmin}
                   />
+                  {companyForm.logo_url ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', width: '100%' }} onClick={(e) => e.stopPropagation()}>
+                      <img 
+                        src={companyForm.logo_url} 
+                        alt="Logo Preview" 
+                        style={{ maxWidth: '60px', maxHeight: '60px', objectFit: 'contain', borderRadius: '4px' }}
+                      />
+                      <button 
+                        type="button" 
+                        className="btn btn-ghost" 
+                        style={{ fontSize: '0.7rem', color: '#f87171', padding: '0.1rem 0.4rem' }}
+                        onClick={() => setCompanyForm({ ...companyForm, logo_url: '' })}
+                      >
+                        Remove Logo
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', textAlign: 'center' }}>
+                      <ImageIcon size={16} style={{ color: 'var(--text-muted)' }} />
+                      <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                        {dragActiveAdmin ? 'Drop here' : 'Upload logo image'}
+                      </span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                        Drag & drop or click
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -705,6 +812,20 @@ const statusPillStyle = (status: string): React.CSSProperties => {
 };
 
 // --- MASTER ADMIN STYLES ---
+const dropZoneStyleAdmin = (active: boolean): React.CSSProperties => ({
+  height: '110px',
+  background: active ? 'rgba(59, 130, 246, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+  border: active ? '1px dashed var(--primary)' : '1px dashed var(--border-color)',
+  borderRadius: 'var(--radius-sm)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '0.75rem',
+  cursor: 'pointer',
+  transition: 'all var(--transition-fast)',
+  position: 'relative'
+});
+
 const kpiLabelStyle: React.CSSProperties = {
   fontSize: '0.75rem',
   color: 'var(--text-secondary)',
