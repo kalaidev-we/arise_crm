@@ -328,12 +328,13 @@ RETURNS TABLE (
   is_default_password BOOLEAN,
   created_at TIMESTAMP WITH TIME ZONE
 ) AS $$
+#variable_conflict use_column
 DECLARE
   v_user_id UUID;
   v_instance_id UUID;
 BEGIN
   -- Authorization check: only admins can create users
-  IF (SELECT role FROM users WHERE id = auth.uid()) NOT IN ('superadmin', 'admin') THEN
+  IF (SELECT u.role FROM public.users u WHERE u.id = auth.uid()) NOT IN ('superadmin', 'admin') THEN
     RAISE EXCEPTION 'Only admins can create users';
   END IF;
 
@@ -409,17 +410,18 @@ RETURNS TABLE (
   is_default_password BOOLEAN,
   created_at TIMESTAMP WITH TIME ZONE
 ) AS $$
+#variable_conflict use_column
 DECLARE
   v_user_id UUID;
   v_instance_id UUID;
 BEGIN
   -- Authorization check: only admins/superadmins can create users
-  IF (SELECT role FROM users WHERE id = auth.uid()) NOT IN ('superadmin', 'admin') THEN
+  IF (SELECT u.role FROM public.users u WHERE u.id = auth.uid()) NOT IN ('superadmin', 'admin') THEN
     RAISE EXCEPTION 'Only admins can create users';
   END IF;
 
   -- If the caller is an admin (not superadmin), they can only create users in their own company
-  IF (SELECT role FROM users WHERE id = auth.uid()) = 'admin' AND p_company_id != (SELECT company_id FROM users WHERE id = auth.uid()) THEN
+  IF (SELECT u.role FROM public.users u WHERE u.id = auth.uid()) = 'admin' AND p_company_id != (SELECT u.company_id FROM public.users u WHERE u.id = auth.uid()) THEN
     RAISE EXCEPTION 'Admins can only create users in their own company';
   END IF;
 
@@ -491,12 +493,12 @@ CREATE OR REPLACE FUNCTION update_user_password(
 RETURNS VOID AS $$
 BEGIN
   -- Authorization check: only admins/superadmins can update other passwords, OR user can update their own
-  IF (SELECT role FROM users WHERE id = auth.uid()) NOT IN ('superadmin', 'admin') AND auth.uid() != p_user_id THEN
+  IF (SELECT u.role FROM public.users u WHERE u.id = auth.uid()) NOT IN ('superadmin', 'admin') AND auth.uid() != p_user_id THEN
     RAISE EXCEPTION 'Unauthorized to change this password';
   END IF;
 
   -- If caller is admin, they can only change password for users in their own company
-  IF (SELECT role FROM users WHERE id = auth.uid()) = 'admin' AND (SELECT company_id FROM users WHERE id = p_user_id) != (SELECT company_id FROM users WHERE id = auth.uid()) THEN
+  IF (SELECT u.role FROM public.users u WHERE u.id = auth.uid()) = 'admin' AND (SELECT u.company_id FROM public.users u WHERE u.id = p_user_id) != (SELECT u.company_id FROM public.users u WHERE u.id = auth.uid()) THEN
     RAISE EXCEPTION 'Admins can only change passwords for users in their own company';
   END IF;
 
@@ -519,12 +521,12 @@ CREATE OR REPLACE FUNCTION delete_tenant_user(p_user_id UUID)
 RETURNS VOID AS $$
 BEGIN
   -- Authorization check: only admins/superadmins can delete users
-  IF (SELECT role FROM users WHERE id = auth.uid()) NOT IN ('superadmin', 'admin') THEN
+  IF (SELECT u.role FROM public.users u WHERE u.id = auth.uid()) NOT IN ('superadmin', 'admin') THEN
     RAISE EXCEPTION 'Only admins can delete users';
   END IF;
 
   -- If caller is admin, they can only delete users in their own company
-  IF (SELECT role FROM users WHERE id = auth.uid()) = 'admin' AND (SELECT company_id FROM users WHERE id = p_user_id) != (SELECT company_id FROM users WHERE id = auth.uid()) THEN
+  IF (SELECT u.role FROM public.users u WHERE u.id = auth.uid()) = 'admin' AND (SELECT u.company_id FROM public.users u WHERE u.id = p_user_id) != (SELECT u.company_id FROM public.users u WHERE u.id = auth.uid()) THEN
     RAISE EXCEPTION 'Admins can only delete users in their own company';
   END IF;
 
@@ -552,7 +554,7 @@ BEGIN
   END IF;
 
   -- 1. Delete all users belonging to this company from auth.users (which cascades to public.users and auth.identities)
-  DELETE FROM auth.users WHERE id IN (SELECT id FROM users WHERE company_id = p_company_id);
+  DELETE FROM auth.users WHERE id IN (SELECT u.id FROM public.users u WHERE u.company_id = p_company_id);
 
   -- 2. Delete the company itself (which cascades to all other company-scoped tables)
   DELETE FROM companies WHERE id = p_company_id;

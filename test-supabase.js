@@ -8,11 +8,11 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 async function testConnection() {
   console.log('Testing connection to:', supabaseUrl);
   
-  // 1. Test Login
-  console.log('Attempting login...');
+  // Test Login
+  console.log('Attempting login for master...');
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email: 'admin@ariseagency.com',
-    password: 'password123'
+    email: 'master@ariseagency.in',
+    password: 'kalai@125'
   });
 
   if (authError) {
