@@ -280,7 +280,7 @@ export const Finance: React.FC = () => {
       </div>
 
       {/* Double ledger sheets: Invoices & Expenses */}
-      <div style={ledgerGridStyle}>
+      <div className="grid-two-col">
         
         {/* Left Side: Invoices */}
         <div className="glass-panel" style={{ padding: '1.5rem 0 0 0', overflow: 'hidden' }}>
@@ -535,7 +535,7 @@ export const Finance: React.FC = () => {
                   </select>
                 </div>
 
-                <div style={formRowGrid}>
+                <div className="grid-two-col">
                   <div className="form-group">
                     <label className="form-label">Description Note</label>
                     <input

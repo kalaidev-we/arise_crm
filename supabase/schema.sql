@@ -424,7 +424,8 @@ BEGIN
     confirmation_token,
     recovery_token,
     email_change_token_new,
-    email_change
+    email_change,
+    role
   )
   VALUES (
     v_user_id,
@@ -440,7 +441,8 @@ BEGIN
     '',
     '',
     '',
-    ''
+    '',
+    'authenticated'
   );
 
   -- Create auth identity record
@@ -561,7 +563,8 @@ BEGIN
     confirmation_token,
     recovery_token,
     email_change_token_new,
-    email_change
+    email_change,
+    role
   )
   VALUES (
     v_user_id,
@@ -577,7 +580,8 @@ BEGIN
     '',
     '',
     '',
-    ''
+    '',
+    'authenticated'
   );
 
   -- Create auth identity record

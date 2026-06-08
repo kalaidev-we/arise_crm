@@ -289,7 +289,7 @@ export const Leads: React.FC = () => {
                   />
                 </div>
 
-                <div style={formRowGrid}>
+                <div className="grid-two-col">
                   <div className="form-group">
                     <label className="form-label">Email Address</label>
                     <input

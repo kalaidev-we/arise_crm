@@ -112,7 +112,7 @@ const App: React.FC = () => {
       
       <main className="main-content" style={user ? {} : { marginLeft: 0, padding: 0 }}>
         {user && (
-          <div className="mobile-header-toggle" style={{ display: 'none' }}>
+          <div className="mobile-header-toggle">
             <button onClick={() => setIsMobileMenuOpen(true)} className="btn btn-ghost" style={{ padding: '0.5rem 0' }}>
               <Menu size={24} />
             </button>

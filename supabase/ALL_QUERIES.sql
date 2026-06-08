@@ -352,13 +352,13 @@ BEGIN
   INSERT INTO auth.users (
     id, instance_id, email, encrypted_password, email_confirmed_at,
     raw_app_meta_data, raw_user_meta_data, aud, created_at, updated_at,
-    confirmation_token, recovery_token, email_change_token_new, email_change
+    confirmation_token, recovery_token, email_change_token_new, email_change, role
   )
   VALUES (
     v_user_id, v_instance_id, p_email, crypt(p_password, gen_salt('bf')), NOW(),
     '{"provider":"email","providers":["email"]}'::jsonb,
     jsonb_build_object('name', p_name),
-    'authenticated', NOW(), NOW(), '', '', '', ''
+    'authenticated', NOW(), NOW(), '', '', '', '', 'authenticated'
   );
 
   -- Create auth identity record
@@ -444,13 +444,13 @@ BEGIN
   INSERT INTO auth.users (
     id, instance_id, email, encrypted_password, email_confirmed_at,
     raw_app_meta_data, raw_user_meta_data, aud, created_at, updated_at,
-    confirmation_token, recovery_token, email_change_token_new, email_change
+    confirmation_token, recovery_token, email_change_token_new, email_change, role
   )
   VALUES (
     v_user_id, v_instance_id, p_email, crypt(p_password, gen_salt('bf')), NOW(),
     '{"provider":"email","providers":["email"]}'::jsonb,
     jsonb_build_object('name', p_name),
-    'authenticated', NOW(), NOW(), '', '', '', ''
+    'authenticated', NOW(), NOW(), '', '', '', '', 'authenticated'
   );
 
   -- Create auth identity record

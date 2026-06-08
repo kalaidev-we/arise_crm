@@ -393,7 +393,7 @@ export const ProjectDetails: React.FC = () => {
                   />
                 </div>
 
-                <div style={formRowGrid}>
+                <div className="grid-two-col">
                   <div className="form-group">
                     <label className="form-label">Assign To User</label>
                     <select
@@ -424,7 +424,7 @@ export const ProjectDetails: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={formRowGrid}>
+                <div className="grid-two-col">
                   <div className="form-group">
                     <label className="form-label">Due Date</label>
                     <input

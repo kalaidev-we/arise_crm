@@ -197,7 +197,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* 3. TASK OVERVIEW SECTION */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+      <div className="grid-dashboard">
         
         {/* Left Side: Tasks Board List */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

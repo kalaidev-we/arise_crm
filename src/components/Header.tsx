@@ -13,7 +13,7 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
   if (!user) return null;
 
   return (
-    <header style={headerStyle}>
+    <header className="header-container">
       <h1 style={titleStyle}>{title}</h1>
 
       <div style={statusContainerStyle}>

@@ -216,7 +216,7 @@ export const MasterAdmin: React.FC = () => {
 
       {/* Render selected panel view */}
       {activeTab === 'tenants' ? (
-        <div style={layoutGrid}>
+        <div className="grid-master-admin">
           {/* Create tenant form */}
           <div className="glass-panel" style={{ padding: '1.5rem', height: 'fit-content' }}>
             <div style={sectionHeader}>
@@ -302,7 +302,7 @@ export const MasterAdmin: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div style={layoutGrid}>
+        <div className="grid-master-admin">
           {/* Create admin form */}
           <div className="glass-panel" style={{ padding: '1.5rem', height: 'fit-content' }}>
             <div style={sectionHeader}>
