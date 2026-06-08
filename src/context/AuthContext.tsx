@@ -52,30 +52,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (email: string, password: string): Promise<User> => {
-    setLoading(true);
     try {
       const loggedInUser = await db.auth.login(email, password);
       setUser(loggedInUser);
       await fetchCompanyName(loggedInUser.company_id);
       return loggedInUser;
     } catch (err) {
-      setLoading(false);
+      console.error('Login error:', err);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const logout = async (): Promise<void> => {
-    setLoading(true);
     try {
       await db.auth.logout();
       setUser(null);
       setCompanyName('');
     } catch (err) {
       console.error('Logout error:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
